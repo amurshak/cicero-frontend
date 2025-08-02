@@ -1,28 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Send, Scale, Menu } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Send, Scale } from 'lucide-react';
 
-export default function HomePage() {
+export default function MinimalChatPage() {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [message, setMessage] = useState('');
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    }
-    
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showMenu]);
 
   const suggestedPrompts = [
     "What's in H.R. 1?",
@@ -36,12 +18,9 @@ export default function HomePage() {
   const handleSendMessage = (text = message) => {
     if (!text.trim()) return;
     
-    // TODO: Implement actual message sending via WebSocket
+    // TODO: Implement actual message sending
     console.log('Sending message:', text);
     setMessage('');
-    
-    // For now, navigate to chat page
-    navigate('/chat', { state: { initialMessage: text } });
   };
 
   const handlePromptClick = (prompt) => {
@@ -65,7 +44,7 @@ export default function HomePage() {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Cicero</h1>
-            <p className="text-xs text-white/60 hidden sm:block">Legislative Intelligence</p>
+            <p className="text-xs text-white/60">Legislative Intelligence</p>
           </div>
         </div>
 
@@ -79,64 +58,15 @@ export default function HomePage() {
                   </span>
                 </div>
                 <span className="text-sm text-white/80 hidden sm:block">
-                  {user.displayName || user.email.split('@')[0]}
+                  {user.displayName || user.email}
                 </span>
               </div>
-              
-              {/* Desktop Menu */}
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={() => navigate('/search')}
-                  className="px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={() => navigate('/billing')}
-                  className="px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  Billing
-                </button>
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/10"
-                >
-                  Logout
-                </button>
-              </div>
-
-              {/* Mobile Menu */}
-              <div className="sm:hidden" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  <Menu size={20} />
-                </button>
-                
-                {showMenu && (
-                  <div className="absolute top-16 right-6 bg-primary-800 border border-white/20 rounded-lg p-2 backdrop-blur-md z-50">
-                    <button
-                      onClick={() => { navigate('/search'); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
-                    >
-                      Search
-                    </button>
-                    <button
-                      onClick={() => { navigate('/billing'); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
-                    >
-                      Billing
-                    </button>
-                    <button
-                      onClick={() => { logout(); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
+              <button
+                onClick={logout}
+                className="px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/10"
+              >
+                Logout
+              </button>
             </>
           )}
         </div>
