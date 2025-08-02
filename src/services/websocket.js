@@ -51,8 +51,12 @@ class WebSocketService {
   }
 
   handleMessage(data) {
+    console.log('WebSocket received:', data);
     const { type } = data;
     const handlers = this.messageHandlers.get(type) || [];
+    if (handlers.length === 0) {
+      console.warn(`No handlers registered for message type: ${type}`);
+    }
     handlers.forEach(handler => handler(data));
   }
 
@@ -80,11 +84,14 @@ class WebSocketService {
   }
 
   sendQuery(query, conversationId = null) {
-    this.send({
+    const message = {
       type: 'query',
       content: query,
-      conversation_id: conversationId
-    });
+      session_id: conversationId,
+      timestamp: new Date().toISOString()
+    };
+    console.log('Sending query:', message);
+    this.send(message);
   }
 
   attemptReconnect() {

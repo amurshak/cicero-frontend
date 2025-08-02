@@ -45,7 +45,12 @@ export default function HomePage() {
   };
 
   const handlePromptClick = (prompt) => {
-    handleSendMessage(prompt);
+    setMessage(prompt);
+    // Focus the input after setting the message
+    setTimeout(() => {
+      const textarea = document.querySelector('textarea');
+      if (textarea) textarea.focus();
+    }, 0);
   };
 
   const handleKeyPress = (e) => {
@@ -70,7 +75,7 @@ export default function HomePage() {
         </div>
 
         <div className="flex items-center gap-4">
-          {user && (
+          {user ? (
             <>
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
@@ -83,7 +88,7 @@ export default function HomePage() {
                 </span>
               </div>
               
-              {/* Desktop Menu */}
+              {/* Desktop Menu - Authenticated */}
               <div className="hidden sm:flex items-center gap-2">
                 <button
                   onClick={() => navigate('/search')}
@@ -105,7 +110,7 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* Mobile Menu */}
+              {/* Mobile Menu - Authenticated */}
               <div className="sm:hidden" ref={menuRef}>
                 <button
                   onClick={() => setShowMenu(!showMenu)}
@@ -138,14 +143,30 @@ export default function HomePage() {
                 )}
               </div>
             </>
+          ) : (
+            /* Not authenticated - Show login/signup */
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+              >
+                Login
+              </button>
+              <button
+                onClick={() => navigate('/signup')}
+                className="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all"
+              >
+                Sign Up
+              </button>
+            </div>
           )}
         </div>
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-32">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pb-8">
         {/* Main Prompt */}
-        <div className="text-center mb-12 max-w-2xl">
+        <div className="text-center mb-12 max-w-3xl">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             <span className="text-white">What legislative </span>
             <span className="text-blue-400">information</span>
@@ -157,24 +178,20 @@ export default function HomePage() {
         </div>
 
         {/* Suggested Prompts */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-16 max-w-4xl w-full">
+        <div className="flex flex-wrap justify-center gap-2 mb-8 max-w-2xl">
           {suggestedPrompts.map((prompt, index) => (
             <button
               key={index}
               onClick={() => handlePromptClick(prompt)}
-              className="group p-4 text-left bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm"
+              className="px-4 py-2 text-sm text-white/70 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg transition-all duration-200"
             >
-              <span className="text-white/80 group-hover:text-white transition-colors">
-                {prompt}
-              </span>
+              {prompt}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Chat Input - Fixed at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 bg-primary-900/80 backdrop-blur-md border-t border-white/10">
-        <div className="max-w-4xl mx-auto">
+        {/* Chat Input - Centered in content */}
+        <div className="w-full max-w-2xl">
           <div className="relative">
             <textarea
               value={message}
@@ -196,15 +213,6 @@ export default function HomePage() {
               <Send size={20} className="text-white" />
             </button>
           </div>
-          
-          {/* Usage indicator */}
-          {user && (
-            <div className="mt-3 text-center">
-              <span className="text-xs text-white/40">
-                {user.subscriptionTier || 'Free'} Plan • Press Enter to send
-              </span>
-            </div>
-          )}
         </div>
       </div>
     </div>

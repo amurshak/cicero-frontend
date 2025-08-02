@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Test</title>
+</head>
+<body>
+    <h1>WebSocket Test</h1>
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendMessage()">Send Test Message</button>
+    <div id="messages"></div>
+
+    <script>
+        let ws;
+        const messagesDiv = document.getElementById('messages');
+
+        function log(message) {
+            messagesDiv.innerHTML += `<p>${new Date().toLocaleTimeString()}: ${message}</p>`;
+        }
+
+        function connect() {
+            ws = new WebSocket('ws://localhost:8000/ws');
+            
+            ws.onopen = () => {
+                log('Connected to WebSocket');
+            };
+            
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                log(`Received: ${data.type} - ${JSON.stringify(data)}`);
+            };
+            
+            ws.onerror = (error) => {
+                log(`Error: ${error}`);
+            };
+            
+            ws.onclose = () => {
+                log('Disconnected from WebSocket');
+            };
+        }
+
+        function sendMessage() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = {
+                    type: 'query',
+                    content: 'What is HR 1?'
+                };
+                ws.send(JSON.stringify(message));
+                log(`Sent: ${JSON.stringify(message)}`);
+            } else {
+                log('WebSocket is not connected');
+            }
+        }
+    </script>
+</body>
+</html>

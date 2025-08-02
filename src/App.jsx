@@ -37,20 +37,12 @@ function App() {
       <AuthProvider>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           
-          {/* Protected Routes */}
-          <Route path="/" element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          } />
-          <Route path="/chat" element={
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          } />
+          {/* Protected Routes - Features that require authentication */}
           <Route path="/search" element={
             <ProtectedRoute>
               <SearchPage />
