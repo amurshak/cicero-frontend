@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, ChevronDown, Scale } from 'lucide-react';
 import { websocketService } from '../services/websocket';
 import { useAuth } from '../hooks/useAuth';
 
@@ -14,16 +14,40 @@ export default function ChatPage() {
   const [isConnecting, setIsConnecting] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState(null);
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
+
+  const isAtBottom = () => {
+    if (!messagesContainerRef.current) return true;
+    const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+    // Consider "at bottom" if within 100px of the bottom
+    return scrollHeight - scrollTop - clientHeight < 100;
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  // Auto-scroll only if already at bottom when new messages arrive
   useEffect(() => {
-    scrollToBottom();
+    if (isAtBottom()) {
+      scrollToBottom();
+    }
   }, [messages, currentStreamingMessage]);
+
+  // Update scroll indicator visibility based on scroll position
+  const handleScroll = () => {
+    setShowScrollIndicator(!isAtBottom());
+  };
+
+  // Check initial scroll position and after messages load
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+      setShowScrollIndicator(!isAtBottom());
+    }
+  }, [messages]);
 
   useEffect(() => {
     // Connect to WebSocket
@@ -153,7 +177,7 @@ export default function ChatPage() {
     websocketService.sendQuery(messageText);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -162,10 +186,10 @@ export default function ChatPage() {
 
   return (
     <PageContainer>
-      <div className="h-full flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-white/10">
-          <div className="flex items-center gap-4">
+      <div className="h-full bg-primary-900 flex flex-col">
+        {/* Header - No border */}
+        <div className="flex-shrink-0 p-4">
+          <div className="max-w-3xl mx-auto flex items-center gap-4">
             <button
               onClick={() => navigate('/')}
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all"
@@ -182,79 +206,119 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-3xl mx-auto space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xl px-4 py-3 rounded-2xl ${
-                    message.type === 'user'
-                      ? 'bg-blue-600 text-white'
-                      : message.type === 'error'
-                      ? 'bg-red-600/20 text-red-200 border border-red-500/30'
-                      : 'bg-white/5 text-white border border-white/10'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  <p className="text-xs opacity-60 mt-2">
-                    {message.timestamp.toLocaleTimeString()}
-                  </p>
+      {/* Messages - Full width, no borders */}
+      <div 
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto"
+      >
+        <div className="max-w-3xl mx-auto py-4">
+          {messages.map((message, index) => (
+            <div key={index}>
+              {message.type === 'user' ? (
+                // User message - right aligned
+                <div className="flex justify-end mb-6">
+                  <div className="max-w-[70%] px-4 py-3 bg-white/[0.08] rounded-2xl">
+                    <p className="text-white/90 whitespace-pre-wrap">{message.content}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-            
-            {/* Streaming message */}
-            {currentStreamingMessage && (
-              <div className="flex justify-start">
-                <div className="max-w-xl px-4 py-3 rounded-2xl bg-white/5 text-white border border-white/10">
-                  <p className="whitespace-pre-wrap">{currentStreamingMessage.content}</p>
-                  {currentStreamingMessage.isStreaming && (
-                    <Loader2 className="animate-spin w-4 h-4 mt-2 text-blue-400" />
-                  )}
+              ) : (
+                // Assistant message - full width with avatar
+                <div className="group hover:bg-white/[0.02] transition-colors mb-6">
+                  <div className="px-4 py-6">
+                    <div className="flex gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                          <Scale size={16} className="text-white/60" />
+                        </div>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`whitespace-pre-wrap text-white/90 ${
+                          message.type === 'error' ? 'text-red-400' : ''
+                        }`}>
+                          {message.content}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-            
-            <div ref={messagesEndRef} />
-          </div>
-        </div>
-
-        {/* Input */}
-        <div className="p-6 border-t border-white/10">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative">
-              <textarea
-                ref={inputRef}
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask about bills, members, voting records..."
-                disabled={isProcessing || isConnecting}
-                className="w-full px-6 py-4 pr-14 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all backdrop-blur-sm disabled:opacity-50"
-                rows="1"
-                style={{ 
-                  minHeight: '60px',
-                  maxHeight: '120px'
-                }}
-              />
-              <button
-                onClick={() => handleSendMessage()}
-                disabled={!inputMessage.trim() || isProcessing || isConnecting}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-white/10 disabled:cursor-not-allowed rounded-xl transition-all"
-              >
-                {isProcessing ? (
-                  <Loader2 size={20} className="text-white animate-spin" />
-                ) : (
-                  <Send size={20} className="text-white" />
-                )}
-              </button>
+              )}
             </div>
-          </div>
+          ))}
+          
+          {/* Streaming message */}
+          {currentStreamingMessage && (
+            <div className="group hover:bg-white/[0.02] transition-colors">
+              <div className="px-4 py-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                      <Scale size={16} className="text-white/60" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="whitespace-pre-wrap text-white/90">{currentStreamingMessage.content}</p>
+                    {currentStreamingMessage.isStreaming && (
+                      <Loader2 className="animate-spin w-4 h-4 mt-2 text-blue-400" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
         </div>
+      </div>
+
+      {/* Scroll to Bottom Indicator */}
+      {showScrollIndicator && (
+        <div className="fixed bottom-20 left-1/2 transform -translate-x-1/2 z-10">
+          <button
+            onClick={scrollToBottom}
+            className="w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 border border-white/20 rounded-full shadow-lg transition-all animate-fade-in backdrop-blur-sm"
+            aria-label="Scroll to bottom"
+          >
+            <ChevronDown size={20} className="text-white/80" />
+          </button>
+        </div>
+      )}
+
+      {/* Input - No border, integrated background */}
+      <div className="flex-shrink-0 p-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="relative">
+            <textarea
+              ref={inputRef}
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask about bills, members, voting records..."
+              disabled={isProcessing || isConnecting}
+              className="w-full px-4 py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
+              rows="1"
+              style={{ 
+                minHeight: '52px',
+                maxHeight: '200px'
+              }}
+            />
+            <button
+              onClick={() => handleSendMessage()}
+              disabled={!inputMessage.trim() || isProcessing || isConnecting}
+              className="absolute right-2 bottom-2 p-2 bg-white/10 hover:bg-white/20 disabled:bg-transparent disabled:cursor-not-allowed rounded-lg transition-all"
+            >
+              {isProcessing ? (
+                <Loader2 size={16} className="text-white/60 animate-spin" />
+              ) : (
+                <Send size={16} className="text-white/60" />
+              )}
+            </button>
+          </div>
+          <p className="text-xs text-white/40 text-center mt-2">
+            Cicero can make mistakes. Check important info.
+          </p>
+        </div>
+      </div>
       </div>
     </PageContainer>
   );
