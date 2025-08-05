@@ -15,6 +15,7 @@ export default function ChatPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
+  const [assistantStatus, setAssistantStatus] = useState(null); // 'thinking' | 'searching' | 'writing' | null
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -73,35 +74,29 @@ export default function ChatPage() {
 
     websocketService.on('query_received', (data) => {
       console.log('Query received:', data);
+      setAssistantStatus('thinking');
+      setCurrentStreamingMessage(null);
     });
 
     websocketService.on('reasoning_update', (data) => {
-      setCurrentStreamingMessage({
-        type: 'assistant',
-        content: `🤔 ${data.content}`,
-        isStreaming: true
-      });
+      setAssistantStatus('thinking');
+      // Don't show reasoning content to user, just the status
     });
 
     websocketService.on('tool_start', (data) => {
-      setCurrentStreamingMessage({
-        type: 'assistant',
-        content: `🔧 Using tool: ${data.content}`,
-        isStreaming: true
-      });
+      setAssistantStatus('searching');
+      // Don't show tool details to user, just the status
     });
 
     websocketService.on('tool_result', (data) => {
-      setCurrentStreamingMessage({
-        type: 'assistant',
-        content: `📊 ${data.content}`,
-        isStreaming: true
-      });
+      setAssistantStatus('searching');
+      // Don't show tool results to user, just the status
     });
 
     websocketService.on('response_chunk', (data) => {
+      setAssistantStatus('writing');
       setCurrentStreamingMessage(prev => {
-        const existingContent = prev?.content?.replace(/^(🤔|🔧).*?\n/, '') || '';
+        const existingContent = prev?.content || '';
         return {
           type: 'assistant',
           content: existingContent + data.chunk,
@@ -117,6 +112,7 @@ export default function ChatPage() {
         timestamp: new Date()
       }]);
       setCurrentStreamingMessage(null);
+      setAssistantStatus(null);
       setIsProcessing(false);
     });
 
@@ -127,6 +123,7 @@ export default function ChatPage() {
         timestamp: new Date()
       }]);
       setCurrentStreamingMessage(null);
+      setAssistantStatus(null);
       setIsProcessing(false);
     });
 
@@ -184,6 +181,16 @@ export default function ChatPage() {
     }
   };
 
+  // Auto-resize textarea
+  const handleInputChange = (e) => {
+    setInputMessage(e.target.value);
+    
+    // Auto-resize the textarea
+    const textarea = e.target;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+  };
+
   return (
     <PageContainer>
       <div className="h-full bg-primary-900 flex flex-col">
@@ -214,17 +221,17 @@ export default function ChatPage() {
       >
         <div className="max-w-3xl mx-auto py-4">
           {messages.map((message, index) => (
-            <div key={index}>
+            <div key={index} className="animate-fade-in">
               {message.type === 'user' ? (
                 // User message - right aligned
                 <div className="flex justify-end mb-6">
-                  <div className="max-w-[70%] px-4 py-3 bg-white/[0.08] rounded-2xl">
-                    <p className="text-white/90 whitespace-pre-wrap">{message.content}</p>
+                  <div className="max-w-[70%] px-5 py-4 bg-white/[0.08] rounded-2xl transform animate-slide-up">
+                    <p className="text-lg text-white/90 whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ) : (
                 // Assistant message - full width with avatar
-                <div className="group hover:bg-white/[0.02] transition-colors mb-6">
+                <div className="group hover:bg-white/[0.02] transition-colors mb-6 animate-slide-up">
                   <div className="px-4 py-6">
                     <div className="flex gap-4">
                       <div className="flex-shrink-0">
@@ -233,7 +240,7 @@ export default function ChatPage() {
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`whitespace-pre-wrap text-white/90 ${
+                        <p className={`whitespace-pre-wrap text-lg leading-relaxed text-white/90 ${
                           message.type === 'error' ? 'text-red-400' : ''
                         }`}>
                           {message.content}
@@ -246,9 +253,9 @@ export default function ChatPage() {
             </div>
           ))}
           
-          {/* Streaming message */}
-          {currentStreamingMessage && (
-            <div className="group hover:bg-white/[0.02] transition-colors">
+          {/* Typing Indicator */}
+          {assistantStatus && !currentStreamingMessage && (
+            <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
               <div className="px-4 py-6">
                 <div className="flex gap-4">
                   <div className="flex-shrink-0">
@@ -257,10 +264,52 @@ export default function ChatPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="whitespace-pre-wrap text-white/90">{currentStreamingMessage.content}</p>
-                    {currentStreamingMessage.isStreaming && (
-                      <Loader2 className="animate-spin w-4 h-4 mt-2 text-blue-400" />
-                    )}
+                    <div className="flex items-center gap-3">
+                      {assistantStatus === 'thinking' && (
+                        <>
+                          <span className="text-white/60">Cicero is thinking</span>
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                        </>
+                      )}
+                      {assistantStatus === 'searching' && (
+                        <>
+                          <span className="text-white/60">Searching legislative data</span>
+                          <Loader2 className="animate-spin w-4 h-4 text-blue-400" />
+                        </>
+                      )}
+                      {assistantStatus === 'writing' && (
+                        <>
+                          <span className="text-white/60">Cicero is writing</span>
+                          <div className="flex gap-1">
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
+                            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }}></div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Streaming message */}
+          {currentStreamingMessage && (
+            <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
+              <div className="px-4 py-6">
+                <div className="flex gap-4">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+                      <Scale size={16} className="text-white/60" />
+                    </div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">{currentStreamingMessage.content}</p>
                   </div>
                 </div>
               </div>
@@ -291,15 +340,16 @@ export default function ChatPage() {
             <textarea
               ref={inputRef}
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask about bills, members, voting records..."
               disabled={isProcessing || isConnecting}
-              className="w-full px-4 py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
+              className="w-full px-4 py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-base text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
               rows="1"
               style={{ 
                 minHeight: '52px',
-                maxHeight: '200px'
+                maxHeight: '200px',
+                overflow: 'hidden'
               }}
             />
             <button
@@ -314,9 +364,10 @@ export default function ChatPage() {
               )}
             </button>
           </div>
-          <p className="text-xs text-white/40 text-center mt-2">
-            Cicero can make mistakes. Check important info.
-          </p>
+          <div className="flex items-center justify-between mt-2 text-xs text-white/40">
+            <span>Shift + Enter for new line</span>
+            <span>Cicero can make mistakes. Check important info.</span>
+          </div>
         </div>
       </div>
       </div>
