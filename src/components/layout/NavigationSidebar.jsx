@@ -5,11 +5,7 @@ import {
   ChevronRight, 
   Home, 
   MessageSquare, 
-  CreditCard, 
-  User,
-  LogOut,
-  Search,
-  Settings
+  LogOut
 } from 'lucide-react';
 import { sharedStyles } from '../shared/sharedStyles';
 import { useAuth } from '../../hooks/useAuth';
@@ -24,10 +20,6 @@ export function NavigationSidebar() {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/chat', icon: MessageSquare, label: 'Chat' },
-    { path: '/search', icon: Search, label: 'Search' },
-    { path: '/billing', icon: CreditCard, label: 'Billing' },
-    { path: '/account', icon: User, label: 'Account' },
-    { path: '/settings', icon: Settings, label: 'Settings' },
   ];
 
   return (

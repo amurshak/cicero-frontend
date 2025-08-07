@@ -16,9 +16,26 @@ export default function ChatPage() {
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [assistantStatus, setAssistantStatus] = useState(null); // 'thinking' | 'searching' | 'writing' | null
+  const [thinkingTermIndex, setThinkingTermIndex] = useState(0);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
+  
+  // Cicero's various thinking states
+  const thinkingTerms = [
+    'thinking',
+    'pontificating',
+    'orating',
+    'legislating',
+    'deliberating',
+    'contemplating',
+    'analyzing',
+    'researching',
+    'considering',
+    'examining',
+    'reflecting',
+    'adjudicating'
+  ];
 
   const isAtBottom = () => {
     if (!messagesContainerRef.current) return true;
@@ -50,6 +67,17 @@ export default function ChatPage() {
     }
   }, [messages]);
 
+  // Cycle through thinking terms when status is 'thinking'
+  useEffect(() => {
+    if (assistantStatus === 'thinking') {
+      const interval = setInterval(() => {
+        setThinkingTermIndex(prev => (prev + 1) % thinkingTerms.length);
+      }, 2500); // Change term every 2.5 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [assistantStatus, thinkingTerms.length]);
+
   useEffect(() => {
     // Connect to WebSocket
     const token = localStorage.getItem('authToken');
@@ -76,6 +104,7 @@ export default function ChatPage() {
       console.log('Query received:', data);
       setAssistantStatus('thinking');
       setCurrentStreamingMessage(null);
+      setThinkingTermIndex(0); // Reset to first term
     });
 
     websocketService.on('reasoning_update', (data) => {
@@ -94,12 +123,15 @@ export default function ChatPage() {
     });
 
     websocketService.on('response_chunk', (data) => {
-      setAssistantStatus('writing');
+      console.log('📝 Received response chunk:', data);
+      setAssistantStatus(null); // Clear typing indicator when text starts streaming
       setCurrentStreamingMessage(prev => {
         const existingContent = prev?.content || '';
+        const newContent = existingContent + data.chunk;
+        console.log('📝 Building streaming content:', newContent.length, 'chars');
         return {
           type: 'assistant',
-          content: existingContent + data.chunk,
+          content: newContent,
           isStreaming: true
         };
       });
@@ -267,7 +299,25 @@ export default function ChatPage() {
                     <div className="flex items-center gap-3">
                       {assistantStatus === 'thinking' && (
                         <>
-                          <span className="text-white/60">Cicero is thinking</span>
+                          <div className="relative flex items-center gap-2">
+                            <span className="text-white/60">Cicero is</span>
+                            <div className="relative h-6 w-32 overflow-hidden">
+                              <div 
+                                className="absolute inset-0 flex items-center transition-transform duration-500 ease-in-out"
+                                style={{ transform: `translateY(-${thinkingTermIndex * 24}px)` }}
+                              >
+                                {thinkingTerms.map((term, index) => (
+                                  <div
+                                    key={index}
+                                    className="h-6 flex items-center absolute w-full"
+                                    style={{ transform: `translateY(${index * 24}px)` }}
+                                  >
+                                    <span className="text-white/60">{term}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
                           <div className="flex gap-1">
                             <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                             <div className="w-2 h-2 bg-white/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
@@ -309,7 +359,14 @@ export default function ChatPage() {
                     </div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">{currentStreamingMessage.content}</p>
+                    <div className="relative">
+                      <p className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">
+                        {currentStreamingMessage.content}
+                        {currentStreamingMessage.isStreaming && (
+                          <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse"></span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
