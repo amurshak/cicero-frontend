@@ -14,10 +14,13 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      if (token) {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
+      // Use /auth/check endpoint which doesn't require authentication
+      const response = await authService.checkAuth();
+      if (response.authenticated && response.user) {
+        setUser(response.user);
+      } else {
+        // Clear any stale tokens
+        localStorage.removeItem('authToken');
       }
     } catch (err) {
       console.error('Auth check failed:', err);
@@ -30,39 +33,72 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       setError(null);
-      const { user, token } = await authService.login(email, password);
-      localStorage.setItem('authToken', token);
-      setUser(user);
-      return { success: true };
+      const response = await authService.login(email, password);
+      
+      if (response.success && response.user) {
+        // Store JWT token for API calls
+        if (response.access_token) {
+          localStorage.setItem('authToken', response.access_token);
+        }
+        setUser(response.user);
+        return { success: true };
+      } else {
+        const errorMsg = response.message || 'Login failed';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      const errorMsg = err.response?.data?.detail || err.message;
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   };
 
-  const signup = async (email, password, displayName) => {
+  const signup = async (email, password, displayName, firstName = null, lastName = null) => {
     try {
       setError(null);
-      const { user, token } = await authService.signup(email, password, displayName);
-      localStorage.setItem('authToken', token);
-      setUser(user);
-      return { success: true };
+      const response = await authService.signup(email, password, displayName, firstName, lastName);
+      
+      if (response.success && response.user) {
+        // Store JWT token for API calls
+        if (response.access_token) {
+          localStorage.setItem('authToken', response.access_token);
+        }
+        setUser(response.user);
+        return { success: true };
+      } else {
+        const errorMsg = response.message || 'Signup failed';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      const errorMsg = err.response?.data?.detail || err.message;
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   };
 
-  const loginWithGoogle = async (credential) => {
+  const loginWithGoogle = async (idToken) => {
     try {
       setError(null);
-      const { user, token } = await authService.googleAuth(credential);
-      localStorage.setItem('authToken', token);
-      setUser(user);
-      return { success: true };
+      const response = await authService.googleAuth(idToken);
+      
+      if (response.success && response.user) {
+        // Store JWT token for API calls
+        if (response.access_token) {
+          localStorage.setItem('authToken', response.access_token);
+        }
+        setUser(response.user);
+        return { success: true };
+      } else {
+        const errorMsg = response.message || 'Google login failed';
+        setError(errorMsg);
+        return { success: false, error: errorMsg };
+      }
     } catch (err) {
-      setError(err.message);
-      return { success: false, error: err.message };
+      const errorMsg = err.response?.data?.detail || err.message;
+      setError(errorMsg);
+      return { success: false, error: errorMsg };
     }
   };
 

@@ -1,17 +1,19 @@
 import { api } from './api';
 
 export const authService = {
-  // Sign up
-  signup: async (email, password, displayName) => {
+  // Sign up with password
+  signup: async (email, password, displayName, firstName = null, lastName = null) => {
     const response = await api.post('/auth/signup', {
       email,
       password,
-      display_name: displayName
+      display_name: displayName,
+      first_name: firstName,
+      last_name: lastName
     });
     return response.data;
   },
 
-  // Login
+  // Login with password
   login: async (email, password) => {
     const response = await api.post('/auth/login', {
       email,
@@ -20,10 +22,10 @@ export const authService = {
     return response.data;
   },
 
-  // Google OAuth
-  googleAuth: async (credential) => {
+  // Google OAuth (correct field name)
+  googleAuth: async (idToken) => {
     const response = await api.post('/auth/google', {
-      credential
+      id_token: idToken
     });
     return response.data;
   },
