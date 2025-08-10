@@ -5,6 +5,7 @@ import {
   ChevronRight, 
   Home, 
   MessageSquare, 
+  CreditCard,
   LogOut
 } from 'lucide-react';
 import { sharedStyles } from '../shared/sharedStyles';
@@ -20,6 +21,7 @@ export function NavigationSidebar() {
   const navItems = [
     { path: '/', icon: Home, label: 'Home' },
     { path: '/chat', icon: MessageSquare, label: 'Chat' },
+    { path: '/billing', icon: CreditCard, label: 'Billing' },
   ];
 
   return (
