@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ArrowLeft, Send, Loader2, ChevronDown, Scale } from 'lucide-react';
 import { websocketService } from '../services/websocket';
+import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
 
 export default function ChatPage() {
@@ -18,6 +19,8 @@ export default function ChatPage() {
   const [assistantStatus, setAssistantStatus] = useState(null); // 'thinking' | 'searching' | 'writing' | null
   const [thinkingTermIndex, setThinkingTermIndex] = useState(0);
   const [conversationId, setConversationId] = useState(null);
+  const [conversationTitle, setConversationTitle] = useState(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -79,6 +82,44 @@ export default function ChatPage() {
     }
   }, [assistantStatus, thinkingTerms.length]);
 
+  // Function to load conversation history
+  const loadConversationHistory = async (convId) => {
+    if (!user || !conversationService.canAccessHistory(user)) {
+      console.log('User cannot access conversation history');
+      return;
+    }
+
+    setIsLoadingHistory(true);
+    try {
+      const conversationData = await conversationService.getConversationWithMessages(convId);
+      
+      // Set conversation title
+      setConversationTitle(conversationData.title || 'Untitled Conversation');
+      
+      // Transform messages to match chat interface format
+      const chatMessages = conversationData.messages.map(msg => ({
+        type: msg.role, // Convert role to type for consistency with chat interface
+        content: msg.content,
+        timestamp: new Date(msg.created_at)
+      }));
+      
+      setMessages(chatMessages);
+      console.log(`Loaded ${chatMessages.length} messages from conversation ${convId}`);
+      
+      // Scroll to bottom after loading
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
+      // If we can't load the conversation, start fresh
+      setMessages([]);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
   useEffect(() => {
     // Handle conversation navigation state
     const { conversationId: navConversationId, newConversation } = location.state || {};
@@ -86,11 +127,15 @@ export default function ChatPage() {
     if (navConversationId) {
       // Resuming existing conversation
       setConversationId(navConversationId);
-      // TODO: Load existing conversation messages here
       console.log(`Resuming conversation: ${navConversationId}`);
+      
+      // Load conversation history
+      loadConversationHistory(navConversationId);
     } else if (newConversation) {
       // Starting new conversation (no conversation ID yet)
       setConversationId(null);
+      setConversationTitle(null); // Clear conversation title
+      setMessages([]); // Clear any existing messages
       console.log('Starting new conversation');
     }
     
@@ -258,7 +303,9 @@ export default function ChatPage() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-semibold text-white">Legislative Intelligence Chat</h1>
+              <h1 className="text-xl font-semibold text-white">
+                {conversationTitle || 'Legislative Intelligence Chat'}
+              </h1>
               <p className="text-sm text-white/60">
                 {isConnecting ? 'Connecting...' : 
                  websocketService.ws?.readyState === WebSocket.OPEN ? '🟢 Connected' : '🔴 Disconnected'}
@@ -274,6 +321,16 @@ export default function ChatPage() {
         className="flex-1 overflow-y-auto"
       >
         <div className="max-w-3xl mx-auto py-4">
+          {/* Conversation history loading indicator */}
+          {isLoadingHistory && (
+            <div className="flex items-center justify-center py-8">
+              <div className="flex items-center gap-3 text-white/60">
+                <Loader2 size={20} className="animate-spin" />
+                <span>Loading conversation history...</span>
+              </div>
+            </div>
+          )}
+          
           {messages.map((message, index) => (
             <div key={index} className="animate-fade-in">
               {message.type === 'user' ? (
