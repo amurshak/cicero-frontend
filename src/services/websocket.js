@@ -15,6 +15,8 @@ class WebSocketService {
 
     this.isConnecting = true;
     const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8000';
+    
+    // For browser WebSocket, we need to pass token as query parameter since headers aren't supported
     const url = token ? `${wsUrl}/ws?token=${token}` : `${wsUrl}/ws`;
 
     return new Promise((resolve, reject) => {
@@ -83,11 +85,12 @@ class WebSocketService {
     }
   }
 
-  sendQuery(query, conversationId = null) {
+  sendQuery(query, conversationId = null, sessionId = null) {
     const message = {
       type: 'query',
       content: query,
-      session_id: conversationId,
+      conversation_id: conversationId,
+      session_id: sessionId,
       timestamp: new Date().toISOString()
     };
     console.log('Sending query:', message);

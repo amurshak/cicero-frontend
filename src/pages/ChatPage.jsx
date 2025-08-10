@@ -17,6 +17,7 @@ export default function ChatPage() {
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
   const [assistantStatus, setAssistantStatus] = useState(null); // 'thinking' | 'searching' | 'writing' | null
   const [thinkingTermIndex, setThinkingTermIndex] = useState(0);
+  const [conversationId, setConversationId] = useState(null);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -79,6 +80,20 @@ export default function ChatPage() {
   }, [assistantStatus, thinkingTerms.length]);
 
   useEffect(() => {
+    // Handle conversation navigation state
+    const { conversationId: navConversationId, newConversation } = location.state || {};
+    
+    if (navConversationId) {
+      // Resuming existing conversation
+      setConversationId(navConversationId);
+      // TODO: Load existing conversation messages here
+      console.log(`Resuming conversation: ${navConversationId}`);
+    } else if (newConversation) {
+      // Starting new conversation (no conversation ID yet)
+      setConversationId(null);
+      console.log('Starting new conversation');
+    }
+    
     // Connect to WebSocket
     const token = localStorage.getItem('authToken');
     websocketService.connect(token)
@@ -143,6 +158,13 @@ export default function ChatPage() {
         content: data.content || data.response,
         timestamp: new Date()
       }]);
+      
+      // Capture conversation ID from response metadata
+      if (data.metadata?.conversation_id && !conversationId) {
+        setConversationId(data.metadata.conversation_id);
+        console.log(`New conversation created: ${data.metadata.conversation_id}`);
+      }
+      
       setCurrentStreamingMessage(null);
       setAssistantStatus(null);
       setIsProcessing(false);
@@ -202,8 +224,8 @@ export default function ChatPage() {
     setIsProcessing(true);
 
     // Send via WebSocket
-    console.log('Sending message via WebSocket:', messageText);
-    websocketService.sendQuery(messageText);
+    console.log('Sending message via WebSocket:', messageText, 'Conversation ID:', conversationId);
+    websocketService.sendQuery(messageText, conversationId);
   };
 
   const handleKeyDown = (e) => {
