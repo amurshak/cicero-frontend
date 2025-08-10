@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ChatPage from './pages/ChatPage';
 import BillingPage from './pages/BillingPage';
+import BillingSuccessPage from './pages/BillingSuccessPage';
 import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import SearchPage from './pages/SearchPage';
@@ -51,6 +52,11 @@ function App() {
           <Route path="/billing" element={
             <ProtectedRoute>
               <BillingPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/billing/success" element={
+            <ProtectedRoute>
+              <BillingSuccessPage />
             </ProtectedRoute>
           } />
           <Route path="/account" element={

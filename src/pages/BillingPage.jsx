@@ -29,18 +29,40 @@ export default function BillingPage() {
   };
 
   const handleUpgrade = () => {
-    // Redirect to Stripe payment link
-    window.location.href = STRIPE_PAYMENT_LINK;
+    if (!STRIPE_PAYMENT_LINK) {
+      setError('Stripe payment link is not configured. Please contact support.');
+      return;
+    }
+    
+    // Clear any existing errors
+    setError(null);
+    
+    // Add loading state for better UX
+    setLoading(true);
+    
+    // Redirect to Stripe payment link after a brief moment
+    setTimeout(() => {
+      window.location.href = STRIPE_PAYMENT_LINK;
+    }, 500);
   };
 
   const handleManageSubscription = async () => {
     try {
+      setError(null);
+      setLoading(true);
+      
       const response = await api.post('/stripe/create-portal-session');
-      if (response.data.success) {
+      
+      if (response.data.success && response.data.portal_url) {
+        // Redirect to Stripe Customer Portal
         window.location.href = response.data.portal_url;
+      } else {
+        throw new Error(response.data.error || 'Failed to create portal session');
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to open billing portal');
+      const errorMessage = err.response?.data?.error || err.message || 'Failed to open billing portal';
+      setError(errorMessage);
+      setLoading(false);
     }
   };
 
@@ -96,15 +118,15 @@ export default function BillingPage() {
               {subscription?.has_subscription ? (
                 <div className="space-y-2">
                   <div className="text-2xl font-bold text-white">$49/month</div>
-                  <Button onClick={handleManageSubscription} variant="outline">
-                    Manage Subscription
+                  <Button onClick={handleManageSubscription} variant="outline" disabled={loading}>
+                    {loading ? 'Opening Portal...' : 'Manage Subscription'}
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <div className="text-lg text-white/60">Free</div>
-                  <Button onClick={handleUpgrade} className="bg-blue-600 hover:bg-blue-700">
-                    Upgrade to Pro
+                  <Button onClick={handleUpgrade} className="bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                    {loading ? 'Redirecting...' : 'Upgrade to Pro'}
                   </Button>
                 </div>
               )}
@@ -152,8 +174,8 @@ export default function BillingPage() {
                     <span className="text-blue-400 font-medium">Current Plan</span>
                   </div>
                 ) : (
-                  <Button onClick={handleUpgrade} className="w-full bg-blue-600 hover:bg-blue-700">
-                    Upgrade Now
+                  <Button onClick={handleUpgrade} className="w-full bg-blue-600 hover:bg-blue-700" disabled={loading}>
+                    {loading ? 'Redirecting...' : 'Upgrade Now'}
                   </Button>
                 )}
               </div>
@@ -169,6 +191,20 @@ export default function BillingPage() {
           </p>
           <Button variant="outline">Contact Sales for Enterprise</Button>
         </GlassCard>
+
+        {/* Debug Info (development only) */}
+        {process.env.NODE_ENV === 'development' && (
+          <GlassCard className="bg-yellow-500/10 border-yellow-500/30">
+            <div className="text-sm space-y-2">
+              <h3 className="font-semibold text-yellow-400">Development Info</h3>
+              <div className="text-yellow-200/80">
+                <p>Payment Link: {STRIPE_PAYMENT_LINK ? '✅ Configured' : '❌ Missing'}</p>
+                <p>Subscription API: {subscription ? '✅ Working' : '❌ Failed'}</p>
+                <p>User Tier: {subscription?.tier || 'free'}</p>
+              </div>
+            </div>
+          </GlassCard>
+        )}
       </div>
     </PageContainer>
   );
