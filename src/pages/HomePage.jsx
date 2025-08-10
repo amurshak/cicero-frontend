@@ -53,7 +53,7 @@ export default function HomePage() {
     }, 0);
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -80,28 +80,16 @@ export default function HomePage() {
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
                   <span className="text-sm font-semibold text-white">
-                    {user.displayName ? user.displayName[0].toUpperCase() : user.email[0].toUpperCase()}
+                    {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
                   </span>
                 </div>
                 <span className="text-sm text-white/80 hidden sm:block">
-                  {user.displayName || user.email.split('@')[0]}
+                  {user.display_name}
                 </span>
               </div>
               
               {/* Desktop Menu - Authenticated */}
               <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={() => navigate('/search')}
-                  className="px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  Search
-                </button>
-                <button
-                  onClick={() => navigate('/billing')}
-                  className="px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  Billing
-                </button>
                 <button
                   onClick={logout}
                   className="px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/10"
@@ -121,18 +109,6 @@ export default function HomePage() {
                 
                 {showMenu && (
                   <div className="absolute top-16 right-6 bg-primary-800 border border-white/20 rounded-lg p-2 backdrop-blur-md z-50">
-                    <button
-                      onClick={() => { navigate('/search'); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
-                    >
-                      Search
-                    </button>
-                    <button
-                      onClick={() => { navigate('/billing'); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
-                    >
-                      Billing
-                    </button>
                     <button
                       onClick={() => { logout(); setShowMenu(false); }}
                       className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
@@ -196,7 +172,7 @@ export default function HomePage() {
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               placeholder="Ask me anything about legislation..."
               className="w-full px-6 py-4 pr-14 bg-white/5 border border-white/20 rounded-2xl text-white placeholder-white/50 resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all backdrop-blur-sm"
               rows="1"
