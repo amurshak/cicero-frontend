@@ -42,7 +42,7 @@ export function NavigationSidebar() {
     setLoading(true);
     try {
       const conversationList = await conversationService.getConversations(20);
-      setConversations(conversationList.map(conversationService.formatConversation));
+      setConversations(conversationList.map(conv => conversationService.formatConversation(conv)));
     } catch (error) {
       console.error('Failed to load conversations:', error);
       setConversations([]);
