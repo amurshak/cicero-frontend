@@ -3,13 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, 
   ChevronRight, 
-  Home, 
-  MessageSquare, 
-  CreditCard,
-  LogOut,
   Plus,
   Trash2,
-  Archive
+  MoreHorizontal
 } from 'lucide-react';
 import { sharedStyles } from '../shared/sharedStyles';
 import { useAuth } from '../../hooks/useAuth';
@@ -21,7 +17,7 @@ export function NavigationSidebar() {
   const [loading, setLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   const isActive = (path) => location.pathname === path;
 
@@ -32,6 +28,18 @@ export function NavigationSidebar() {
     } else {
       setConversations([]);
     }
+  }, [user]);
+
+  // Listen for new conversations being created
+  useEffect(() => {
+    const handleConversationCreated = () => {
+      if (user && conversationService.canAccessHistory(user)) {
+        loadConversations();
+      }
+    };
+
+    window.addEventListener('conversationCreated', handleConversationCreated);
+    return () => window.removeEventListener('conversationCreated', handleConversationCreated);
   }, [user]);
 
   const loadConversations = async () => {
@@ -74,10 +82,13 @@ export function NavigationSidebar() {
     }
   };
 
-  const navItems = [
-    { path: '/', icon: Home, label: 'Home' },
-    { path: '/billing', icon: CreditCard, label: 'Billing' },
-  ];
+  const handleHomeClick = () => {
+    navigate('/');
+  };
+
+  const handleUserClick = () => {
+    navigate('/billing');
+  };
 
   return (
     <div 
@@ -94,39 +105,24 @@ export function NavigationSidebar() {
         {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
       </button>
 
-      <div className="p-4 flex items-center gap-3 border-b border-white/10">
-        <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-          <span className="text-lg font-bold">C</span>
-        </div>
-        {isExpanded && (
-          <div className="animate-fade-in">
-            <h1 className="font-bold text-lg">Cicero</h1>
-            <p className="text-xs text-white/60">Legislative Intelligence</p>
+      <div className="p-4 border-b border-white/10">
+        <button 
+          onClick={handleHomeClick}
+          className="flex items-center gap-3 w-full hover:bg-white/5 rounded-lg p-2 -m-2 transition-all group"
+        >
+          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500 transition-colors">
+            <span className="text-lg font-bold">C</span>
           </div>
-        )}
+          {isExpanded && (
+            <div className="animate-fade-in">
+              <h1 className="font-bold text-lg">Cicero</h1>
+              <p className="text-xs text-white/60">Legislative Intelligence</p>
+            </div>
+          )}
+        </button>
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
-        {/* Main Navigation */}
-        {navItems.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`
-              flex items-center gap-3 px-3 py-2 rounded-lg transition-all
-              ${isActive(item.path) 
-                ? 'bg-blue-600/20 text-blue-400' 
-                : 'text-white/70 hover:bg-white/5 hover:text-white'
-              }
-            `}
-          >
-            <item.icon size={20} className="flex-shrink-0" />
-            {isExpanded && (
-              <span className="animate-fade-in">{item.label}</span>
-            )}
-          </Link>
-        ))}
-
         {/* New Chat Button */}
         <button
           onClick={startNewChat}
@@ -208,8 +204,11 @@ export function NavigationSidebar() {
 
       {user && (
         <div className="p-4 border-t border-white/10">
-          <div className={`flex items-center gap-3 ${isExpanded ? 'mb-3' : ''}`}>
-            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0">
+          <button 
+            onClick={handleUserClick}
+            className="flex items-center gap-3 w-full hover:bg-white/5 rounded-lg p-2 -m-2 transition-all group mb-3"
+          >
+            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-red-500 transition-colors">
               <span className="text-sm font-semibold">
                 {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
               </span>
@@ -225,16 +224,9 @@ export function NavigationSidebar() {
                 </p>
               </div>
             )}
-          </div>
-          {isExpanded && (
-            <button
-              onClick={logout}
-              className="flex items-center gap-2 w-full px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-            >
-              <LogOut size={16} />
-              <span>Sign Out</span>
-            </button>
-          )}
+            <MoreHorizontal size={16} className="text-white/40 flex-shrink-0" />
+          </button>
+
         </div>
       )}
     </div>

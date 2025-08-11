@@ -24,6 +24,7 @@ export default function ChatPage() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
+  const notifiedConversationIds = useRef(new Set()); // Track which conversation IDs we've already notified about
   
   // Cicero's various thinking states
   const thinkingTerms = [
@@ -120,14 +121,35 @@ export default function ChatPage() {
     }
   };
 
+  // Helper function to handle new conversation ID capture
+  const handleNewConversationId = (newConversationId, source) => {
+    if (newConversationId && !conversationId && !notifiedConversationIds.current.has(newConversationId)) {
+      setConversationId(newConversationId);
+      console.log(`New conversation ID captured from ${source}: ${newConversationId}`);
+      
+      // Mark this conversation as notified to prevent duplicate events
+      notifiedConversationIds.current.add(newConversationId);
+      
+      // Notify sidebar immediately when conversation ID is available
+      window.dispatchEvent(new CustomEvent('conversationCreated', {
+        detail: { conversationId: newConversationId }
+      }));
+    }
+  };
+
+  // Handle conversation navigation state changes
   useEffect(() => {
-    // Handle conversation navigation state
-    const { conversationId: navConversationId, newConversation } = location.state || {};
+    const { conversationId: navConversationId, newConversation, initialMessage } = location.state || {};
     
     if (navConversationId) {
       // Resuming existing conversation
       setConversationId(navConversationId);
       console.log(`Resuming conversation: ${navConversationId}`);
+      
+      // Reset processing state when switching conversations
+      setIsProcessing(false);
+      setAssistantStatus(null);
+      setCurrentStreamingMessage(null);
       
       // Load conversation history
       loadConversationHistory(navConversationId);
@@ -136,9 +158,44 @@ export default function ChatPage() {
       setConversationId(null);
       setConversationTitle(null); // Clear conversation title
       setMessages([]); // Clear any existing messages
+      
+      // Reset processing state for new conversation
+      setIsProcessing(false);
+      setAssistantStatus(null);
+      setCurrentStreamingMessage(null);
+      
       console.log('Starting new conversation');
     }
-    
+
+    // Handle initial message from home page navigation
+    if (initialMessage && websocketService.ws?.readyState === WebSocket.OPEN) {
+      console.log('Processing initial message from navigation:', initialMessage);
+      setTimeout(() => {
+        const messageText = initialMessage;
+        if (messageText.trim()) {
+          // Add user message
+          setMessages(prev => [...prev, {
+            type: 'user',
+            content: messageText,
+            timestamp: new Date()
+          }]);
+          
+          // Set processing state
+          setIsProcessing(true);
+          
+          // Send via WebSocket  
+          const currentConversationId = navConversationId || null;
+          console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
+          websocketService.sendQuery(messageText, currentConversationId);
+        }
+        
+        // Clear the state to prevent re-sending
+        navigate(location.pathname, { replace: true });
+      }, 100);
+    }
+  }, [location.state, navigate]); // Re-run when location state changes
+
+  useEffect(() => {
     // Connect to WebSocket
     const connectWebSocket = async () => {
       const token = localStorage.getItem('authToken');
@@ -149,35 +206,6 @@ export default function ChatPage() {
         // Additional check to ensure connection is really open
         if (websocketService.ws?.readyState === WebSocket.OPEN) {
           console.log('✅ WebSocket is ready to send messages');
-          
-          // Handle initial message if present and connection is ready
-          if (location.state?.initialMessage) {
-            console.log('Processing initial message from navigation:', location.state.initialMessage);
-            // Small delay to ensure handlers are set up
-            setTimeout(() => {
-              const messageText = location.state.initialMessage;
-              if (messageText.trim()) {
-                // Add user message
-                setMessages(prev => [...prev, {
-                  type: 'user',
-                  content: messageText,
-                  timestamp: new Date()
-                }]);
-                
-                // Set processing state
-                setIsProcessing(true);
-                
-                // Send via WebSocket  
-                // For initial messages from home page, we don't have a conversation ID yet
-                const currentConversationId = navConversationId || null;
-                console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
-                websocketService.sendQuery(messageText, currentConversationId);
-              }
-              
-              // Clear the state to prevent re-sending on component updates
-              navigate(location.pathname, { replace: true });
-            }, 100);
-          }
         }
       } catch (error) {
         console.error('Failed to connect to WebSocket:', error);
@@ -197,11 +225,17 @@ export default function ChatPage() {
       setAssistantStatus('thinking');
       setCurrentStreamingMessage(null);
       setThinkingTermIndex(0); // Reset to first term
+      
+      // Check if this is a new conversation and capture the conversation ID early
+      handleNewConversationId(data.metadata?.conversation_id, 'query_received');
     });
 
     websocketService.on('reasoning_update', (data) => {
       setAssistantStatus('thinking');
       // Don't show reasoning content to user, just the status
+      
+      // Check if this contains conversation ID for new conversations
+      handleNewConversationId(data.metadata?.conversation_id, 'reasoning_update');
     });
 
     websocketService.on('tool_start', (data) => {
@@ -216,38 +250,48 @@ export default function ChatPage() {
 
     websocketService.on('response_chunk', (data) => {
       console.log('📝 Received response chunk:', data);
-      setAssistantStatus(null); // Clear typing indicator when text starts streaming
-      setCurrentStreamingMessage(prev => {
-        const existingContent = prev?.content || '';
-        const newContent = existingContent + data.chunk;
-        console.log('📝 Building streaming content:', newContent.length, 'chars');
-        return {
-          type: 'assistant',
-          content: newContent,
-          isStreaming: true
-        };
-      });
+      // Only process if this response belongs to current conversation or we're creating a new one
+      const responseConversationId = data.metadata?.conversation_id;
+      if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
+        setAssistantStatus(null); // Clear typing indicator when text starts streaming
+        setCurrentStreamingMessage(prev => {
+          const existingContent = prev?.content || '';
+          const newContent = existingContent + data.chunk;
+          console.log('📝 Building streaming content:', newContent.length, 'chars');
+          return {
+            type: 'assistant',
+            content: newContent,
+            isStreaming: true
+          };
+        });
+      } else {
+        console.log('📝 Ignoring response chunk for different conversation:', responseConversationId, 'vs current:', conversationId);
+      }
     });
 
     websocketService.on('response_complete', (data) => {
-      setMessages(prev => [...prev, {
-        type: 'assistant',
-        content: data.content || data.response,
-        timestamp: new Date()
-      }]);
-      
-      // Capture conversation ID from response metadata
-      if (data.metadata?.conversation_id && !conversationId) {
-        setConversationId(data.metadata.conversation_id);
-        console.log(`New conversation created: ${data.metadata.conversation_id}`);
+      // Only process if this response belongs to current conversation or we're creating a new one
+      const responseConversationId = data.metadata?.conversation_id;
+      if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
+        setMessages(prev => [...prev, {
+          type: 'assistant',
+          content: data.content || data.response,
+          timestamp: new Date()
+        }]);
+        
+        // Capture conversation ID from response metadata for new conversations
+        handleNewConversationId(data.metadata?.conversation_id, 'response_complete');
+        
+        setCurrentStreamingMessage(null);
+        setAssistantStatus(null);
+        setIsProcessing(false);
+      } else {
+        console.log('📝 Ignoring response complete for different conversation:', responseConversationId, 'vs current:', conversationId);
       }
-      
-      setCurrentStreamingMessage(null);
-      setAssistantStatus(null);
-      setIsProcessing(false);
     });
 
     websocketService.on('error', (data) => {
+      // Always process errors for current conversation to show user
       setMessages(prev => [...prev, {
         type: 'error',
         content: data.error,
