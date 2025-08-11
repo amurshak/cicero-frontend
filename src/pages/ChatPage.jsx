@@ -140,20 +140,52 @@ export default function ChatPage() {
     }
     
     // Connect to WebSocket
-    const token = localStorage.getItem('authToken');
-    websocketService.connect(token)
-      .then(() => {
+    const connectWebSocket = async () => {
+      const token = localStorage.getItem('authToken');
+      try {
+        await websocketService.connect(token);
         setIsConnecting(false);
         console.log('WebSocket connected successfully');
         // Additional check to ensure connection is really open
         if (websocketService.ws?.readyState === WebSocket.OPEN) {
           console.log('✅ WebSocket is ready to send messages');
+          
+          // Handle initial message if present and connection is ready
+          if (location.state?.initialMessage) {
+            console.log('Processing initial message from navigation:', location.state.initialMessage);
+            // Small delay to ensure handlers are set up
+            setTimeout(() => {
+              const messageText = location.state.initialMessage;
+              if (messageText.trim()) {
+                // Add user message
+                setMessages(prev => [...prev, {
+                  type: 'user',
+                  content: messageText,
+                  timestamp: new Date()
+                }]);
+                
+                // Set processing state
+                setIsProcessing(true);
+                
+                // Send via WebSocket  
+                // For initial messages from home page, we don't have a conversation ID yet
+                const currentConversationId = navConversationId || null;
+                console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
+                websocketService.sendQuery(messageText, currentConversationId);
+              }
+              
+              // Clear the state to prevent re-sending on component updates
+              navigate(location.pathname, { replace: true });
+            }, 100);
+          }
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         console.error('Failed to connect to WebSocket:', error);
         setIsConnecting(false);
-      });
+      }
+    };
+    
+    connectWebSocket();
 
     // Set up message handlers
     websocketService.on('connected', (data) => {
@@ -229,19 +261,7 @@ export default function ChatPage() {
     return () => {
       websocketService.disconnect();
     };
-  }, []);
-
-  // Handle initial message from navigation
-  useEffect(() => {
-    if (location.state?.initialMessage && !isConnecting && !isProcessing) {
-      // Wait a moment to ensure WebSocket is fully connected
-      setTimeout(() => {
-        handleSendMessage(location.state.initialMessage);
-        // Clear the state to prevent re-sending on component updates
-        navigate(location.pathname, { replace: true });
-      }, 500);
-    }
-  }, [location.state?.initialMessage, isConnecting, isProcessing]);
+  }, []); // Keep empty dependency array to prevent reconnection on every render
 
   const handleSendMessage = (messageText = inputMessage) => {
     if (!messageText.trim() || isProcessing || isConnecting) return;

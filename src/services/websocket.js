@@ -9,8 +9,27 @@ class WebSocketService {
   }
 
   connect(token) {
-    if (this.ws?.readyState === WebSocket.OPEN || this.isConnecting) {
+    // If already connected, return immediately
+    if (this.ws?.readyState === WebSocket.OPEN) {
+      console.log('WebSocket already connected');
       return Promise.resolve();
+    }
+    
+    // If currently connecting, wait for the existing connection attempt
+    if (this.isConnecting) {
+      console.log('WebSocket connection already in progress');
+      return new Promise((resolve, reject) => {
+        const checkInterval = setInterval(() => {
+          if (!this.isConnecting) {
+            clearInterval(checkInterval);
+            if (this.ws?.readyState === WebSocket.OPEN) {
+              resolve();
+            } else {
+              reject(new Error('Connection failed'));
+            }
+          }
+        }, 100);
+      });
     }
 
     this.isConnecting = true;
