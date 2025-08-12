@@ -200,6 +200,26 @@ export function NavigationSidebar() {
             </div>
           </div>
         )}
+
+        {/* Sign up prompt for anonymous users */}
+        {!user && isExpanded && (
+          <div className="pt-4">
+            <div className="px-3 py-3 bg-green-600/10 border border-green-600/20 rounded-lg">
+              <div className="text-sm text-green-300 font-medium mb-1">
+                Save Your Conversations
+              </div>
+              <div className="text-xs text-white/60 mb-2">
+                Sign up for free to track your legislative research
+              </div>
+              <Link
+                to="/auth/signup"
+                className="text-xs text-green-400 hover:text-green-300 font-medium"
+              >
+                Sign Up Free →
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {user && (
