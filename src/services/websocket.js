@@ -66,10 +66,16 @@ class WebSocketService {
         reject(error);
       };
 
-      this.ws.onclose = () => {
-        console.log('WebSocket disconnected');
+      this.ws.onclose = (event) => {
+        console.log('WebSocket disconnected', event.code, event.reason);
         this.isConnecting = false;
-        this.attemptReconnect();
+        
+        // Don't auto-reconnect if it's a clean close or during message processing
+        if (event.code !== 1000 && event.code !== 1001) {
+          this.attemptReconnect();
+        } else {
+          console.log('Clean disconnect, not attempting reconnect');
+        }
       };
     });
   }

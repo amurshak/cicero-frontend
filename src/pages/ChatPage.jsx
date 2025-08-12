@@ -335,7 +335,7 @@ export default function ChatPage() {
     const { initialMessage, conversationId: navConversationId } = location.state || {};
     if (initialMessage && !isConnecting && websocketService.ws?.readyState === WebSocket.OPEN) {
       console.log('Processing initial message from navigation:', initialMessage);
-      // Wait a bit longer to ensure handlers are fully set up
+      // Wait longer to ensure WebSocket connection is fully stable
       setTimeout(() => {
         const messageText = initialMessage;
         if (messageText.trim()) {
@@ -360,12 +360,12 @@ export default function ChatPage() {
             console.warn('No WebSocket response received, clearing processing state');
             setIsProcessing(false);
             setAssistantStatus(null);
-          }, 3000); // 3 second timeout for faster feedback
+          }, 5000); // 5 second timeout to allow for server processing
         }
         
         // Clear the state to prevent re-sending
         navigate(location.pathname, { replace: true });
-      }, 200);
+      }, 500); // Increased delay for WebSocket stability
     } else if (initialMessage) {
       // WebSocket not ready yet, but still show the user's message
       console.log('WebSocket not ready, showing message but not sending yet:', initialMessage);
