@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
 import { useAuth } from './hooks/useAuth';
 
 // Pages
@@ -36,7 +37,8 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <Routes>
+        <WebSocketProvider>
+          <Routes>
           {/* Public Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
@@ -70,6 +72,7 @@ function App() {
             </ProtectedRoute>
           } />
         </Routes>
+        </WebSocketProvider>
       </AuthProvider>
     </Router>
   );

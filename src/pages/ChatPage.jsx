@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ArrowLeft, Send, Loader2, ChevronDown, Scale } from 'lucide-react';
-import { websocketService } from '../services/websocket';
+import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
 
@@ -10,9 +10,10 @@ export default function ChatPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { websocketService, isConnected } = useWebSocket();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isConnecting, setIsConnecting] = useState(true);
+  const [isConnecting, setIsConnecting] = useState(!isConnected);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
@@ -172,24 +173,12 @@ export default function ChatPage() {
   }, [location.state, navigate]); // Re-run when location state changes
 
   useEffect(() => {
-    // Connect to WebSocket
-    const connectWebSocket = async () => {
-      const token = localStorage.getItem('authToken');
-      try {
-        await websocketService.connect(token);
-        setIsConnecting(false);
-        console.log('WebSocket connected successfully');
-        // Additional check to ensure connection is really open
-        if (websocketService.ws?.readyState === WebSocket.OPEN) {
-          console.log('✅ WebSocket is ready to send messages');
-        }
-      } catch (error) {
-        console.error('Failed to connect to WebSocket:', error);
-        setIsConnecting(false);
-      }
-    };
+    // Update connecting state based on WebSocket context
+    setIsConnecting(!isConnected);
     
-    connectWebSocket();
+    if (isConnected) {
+      console.log('✅ Using existing WebSocket connection from context');
+    }
 
     // Set up message handlers
     websocketService.on('connected', (data) => {
@@ -331,11 +320,11 @@ export default function ChatPage() {
     });
 
     // Handle initial message from home page navigation
-    // This runs after WebSocket connection and handlers are set up
+    // WebSocket should already be connected from context
     const { initialMessage, conversationId: navConversationId } = location.state || {};
-    if (initialMessage && !isConnecting && websocketService.ws?.readyState === WebSocket.OPEN) {
+    if (initialMessage && isConnected) {
       console.log('Processing initial message from navigation:', initialMessage);
-      // Wait longer to ensure WebSocket connection is fully stable
+      // Small delay to ensure handlers are set up
       setTimeout(() => {
         const messageText = initialMessage;
         if (messageText.trim()) {
@@ -365,7 +354,7 @@ export default function ChatPage() {
         
         // Clear the state to prevent re-sending
         navigate(location.pathname, { replace: true });
-      }, 500); // Increased delay for WebSocket stability
+      }, 100); // Minimal delay since WebSocket is pre-connected
     } else if (initialMessage) {
       // WebSocket not ready yet, but still show the user's message
       console.log('WebSocket not ready, showing message but not sending yet:', initialMessage);
@@ -411,9 +400,10 @@ export default function ChatPage() {
     }
 
     return () => {
-      websocketService.disconnect();
+      // Don't disconnect WebSocket - it's managed by the context
+      // and should persist across page navigation
     };
-  }, [location.state, navigate]); // Include location.state in dependencies
+  }, [location.state, navigate, isConnected]); // Include WebSocket connection state
 
   const handleSendMessage = (messageText = inputMessage) => {
     if (!messageText.trim() || isProcessing || isConnecting) return;
