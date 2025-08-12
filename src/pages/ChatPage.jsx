@@ -167,32 +167,8 @@ export default function ChatPage() {
       console.log('Starting new conversation');
     }
 
-    // Handle initial message from home page navigation
-    if (initialMessage && websocketService.ws?.readyState === WebSocket.OPEN) {
-      console.log('Processing initial message from navigation:', initialMessage);
-      setTimeout(() => {
-        const messageText = initialMessage;
-        if (messageText.trim()) {
-          // Add user message
-          setMessages(prev => [...prev, {
-            type: 'user',
-            content: messageText,
-            timestamp: new Date()
-          }]);
-          
-          // Set processing state
-          setIsProcessing(true);
-          
-          // Send via WebSocket  
-          const currentConversationId = navConversationId || null;
-          console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
-          websocketService.sendQuery(messageText, currentConversationId);
-        }
-        
-        // Clear the state to prevent re-sending
-        navigate(location.pathname, { replace: true });
-      }, 100);
-    }
+    // NOTE: Initial message handling moved to WebSocket connection useEffect
+    // to ensure error handlers are set up before sending queries
   }, [location.state, navigate]); // Re-run when location state changes
 
   useEffect(() => {
@@ -309,17 +285,35 @@ export default function ChatPage() {
       let isRateLimit = data.metadata?.rate_limit || errorContent.includes('Rate limit exceeded');
       
       if (isRateLimit) {
+        // Extract reset time and convert to local time
+        const resetTime = data.metadata?.reset_time;
+        let resetTimeText = "midnight UTC";
+        
+        if (resetTime) {
+          try {
+            const resetDate = new Date(resetTime);
+            resetTimeText = resetDate.toLocaleTimeString('en-US', {
+              hour: 'numeric',
+              minute: '2-digit',
+              timeZoneName: 'short'
+            });
+          } catch (e) {
+            // Fall back to UTC if parsing fails
+            resetTimeText = "midnight UTC";
+          }
+        }
+        
         // Enhanced rate limit messaging for better UX
-        errorContent = `🚫 **Daily query limit reached**
+        errorContent = `🚫 **Daily limit reached** 
 
-You've used all your free queries for today. The limit resets at midnight UTC.
+Your free queries reset at ${resetTimeText}. 
 
-**Want more queries?**
-• **Sign up free** for 10 daily queries (vs 5 for anonymous users)
-• **Upgrade to Pro** for 100 daily queries + conversation history
-• **Enterprise** for unlimited queries
+**Get more queries:**
+• Sign up free → 10/day (vs 5 anonymous)  
+• Pro plan → 100/day + history
+• Enterprise → unlimited
 
-[Sign Up Free](/auth/signup) to get started!`;
+[Sign Up Free →](/auth/signup)`;
       }
       
       // Always process errors for current conversation to show user
@@ -334,10 +328,39 @@ You've used all your free queries for today. The limit resets at midnight UTC.
       setIsProcessing(false);
     });
 
+    // Handle initial message from home page navigation
+    // This runs after WebSocket connection and handlers are set up
+    const { initialMessage, conversationId: navConversationId } = location.state || {};
+    if (initialMessage && websocketService.ws?.readyState === WebSocket.OPEN) {
+      console.log('Processing initial message from navigation:', initialMessage);
+      setTimeout(() => {
+        const messageText = initialMessage;
+        if (messageText.trim()) {
+          // Add user message
+          setMessages(prev => [...prev, {
+            type: 'user',
+            content: messageText,
+            timestamp: new Date()
+          }]);
+          
+          // Set processing state
+          setIsProcessing(true);
+          
+          // Send via WebSocket  
+          const currentConversationId = navConversationId || null;
+          console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
+          websocketService.sendQuery(messageText, currentConversationId);
+        }
+        
+        // Clear the state to prevent re-sending
+        navigate(location.pathname, { replace: true });
+      }, 100);
+    }
+
     return () => {
       websocketService.disconnect();
     };
-  }, []); // Keep empty dependency array to prevent reconnection on every render
+  }, [location.state, navigate]); // Include location.state in dependencies
 
   const handleSendMessage = (messageText = inputMessage) => {
     if (!messageText.trim() || isProcessing || isConnecting) return;
