@@ -180,12 +180,12 @@ export default function ChatPage() {
       console.log('✅ Using existing WebSocket connection from context');
     }
 
-    // Set up message handlers
-    websocketService.on('connected', (data) => {
+    // Define message handlers (store references for cleanup)
+    const connectedHandler = (data) => {
       console.log('Connected:', data);
-    });
+    };
 
-    websocketService.on('query_received', (data) => {
+    const queryReceivedHandler = (data) => {
       console.log('Query received:', data);
       setAssistantStatus('thinking');
       setCurrentStreamingMessage(null);
@@ -193,27 +193,27 @@ export default function ChatPage() {
       
       // Check if this is a new conversation and capture the conversation ID early
       handleNewConversationId(data.metadata?.conversation_id, 'query_received');
-    });
+    };
 
-    websocketService.on('reasoning_update', (data) => {
+    const reasoningUpdateHandler = (data) => {
       setAssistantStatus('thinking');
       // Don't show reasoning content to user, just the status
       
       // Check if this contains conversation ID for new conversations
       handleNewConversationId(data.metadata?.conversation_id, 'reasoning_update');
-    });
+    };
 
-    websocketService.on('tool_start', (data) => {
+    const toolStartHandler = (data) => {
       setAssistantStatus('searching');
       // Don't show tool details to user, just the status
-    });
+    };
 
-    websocketService.on('tool_result', (data) => {
+    const toolResultHandler = (data) => {
       setAssistantStatus('searching');
       // Don't show tool results to user, just the status
-    });
+    };
 
-    websocketService.on('response_chunk', (data) => {
+    const responseChunkHandler = (data) => {
       console.log('📝 Received response chunk:', data);
       // Only process if this response belongs to current conversation or we're creating a new one
       const responseConversationId = data.metadata?.conversation_id;
@@ -232,9 +232,9 @@ export default function ChatPage() {
       } else {
         console.log('📝 Ignoring response chunk for different conversation:', responseConversationId, 'vs current:', conversationId);
       }
-    });
+    };
 
-    websocketService.on('response_complete', (data) => {
+    const responseCompleteHandler = (data) => {
       console.log('🏁 Response complete handler called:', {
         responseConversationId: data.metadata?.conversation_id,
         currentConversationId: conversationId,
@@ -260,9 +260,9 @@ export default function ChatPage() {
       } else {
         console.log('📝 Ignoring response complete for different conversation:', responseConversationId, 'vs current:', conversationId);
       }
-    });
+    };
 
-    websocketService.on('error', (data) => {
+    const errorHandler = (data) => {
       console.log('❌ Error handler called for homepage query:', {
         content: data.content,
         error: data.error,
@@ -317,7 +317,17 @@ export default function ChatPage() {
       setIsProcessing(false);
       
       console.log('✅ Processing state cleared after error');
-    });
+    };
+
+    // Register all handlers
+    websocketService.on('connected', connectedHandler);
+    websocketService.on('query_received', queryReceivedHandler);
+    websocketService.on('reasoning_update', reasoningUpdateHandler);
+    websocketService.on('tool_start', toolStartHandler);
+    websocketService.on('tool_result', toolResultHandler);
+    websocketService.on('response_chunk', responseChunkHandler);
+    websocketService.on('response_complete', responseCompleteHandler);
+    websocketService.on('error', errorHandler);
 
     // Handle initial message from home page navigation
     // WebSocket should already be connected from context
@@ -400,6 +410,16 @@ export default function ChatPage() {
     }
 
     return () => {
+      // Clean up event handlers to prevent duplicates
+      websocketService.off('connected', connectedHandler);
+      websocketService.off('query_received', queryReceivedHandler);
+      websocketService.off('reasoning_update', reasoningUpdateHandler);
+      websocketService.off('tool_start', toolStartHandler);
+      websocketService.off('tool_result', toolResultHandler);
+      websocketService.off('response_chunk', responseChunkHandler);
+      websocketService.off('response_complete', responseCompleteHandler);
+      websocketService.off('error', errorHandler);
+      
       // Don't disconnect WebSocket - it's managed by the context
       // and should persist across page navigation
     };
