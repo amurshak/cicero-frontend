@@ -14,12 +14,22 @@ import { conversationService } from '../../services/conversation';
 export function NavigationSidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [conversations, setConversations] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [conversationsLoading, setConversationsLoading] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const isActive = (path) => location.pathname === path;
+
+  // Debug auth state for anonymous user prompt
+  useEffect(() => {
+    console.log('NavigationSidebar auth state:', { 
+      user: user, 
+      authLoading: authLoading, 
+      isExpanded: isExpanded,
+      shouldShowPrompt: !authLoading && !user && isExpanded 
+    });
+  }, [user, authLoading, isExpanded]);
 
   // Load conversation history for paid users
   useEffect(() => {
@@ -47,7 +57,7 @@ export function NavigationSidebar() {
       return;
     }
 
-    setLoading(true);
+    setConversationsLoading(true);
     try {
       const conversationList = await conversationService.getConversations(20);
       setConversations(conversationList.map(conv => conversationService.formatConversation(conv)));
@@ -55,7 +65,7 @@ export function NavigationSidebar() {
       console.error('Failed to load conversations:', error);
       setConversations([]);
     } finally {
-      setLoading(false);
+      setConversationsLoading(false);
     }
   };
 
@@ -143,7 +153,7 @@ export function NavigationSidebar() {
               </h3>
             </div>
             
-            {loading ? (
+            {conversationsLoading ? (
               <div className="px-3 py-2 text-center">
                 <div className="animate-pulse text-white/40 text-sm">Loading...</div>
               </div>
@@ -202,7 +212,7 @@ export function NavigationSidebar() {
         )}
 
         {/* Sign up prompt for anonymous users */}
-        {!user && isExpanded && (
+        {!authLoading && !user && isExpanded && (
           <div className="pt-4">
             <div className="px-3 py-3 bg-green-600/10 border border-green-600/20 rounded-lg">
               <div className="text-sm text-green-300 font-medium mb-1">
