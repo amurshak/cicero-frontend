@@ -206,10 +206,10 @@ export function NavigationSidebar() {
           <div className="pt-4">
             <div className="px-3 py-3 bg-green-600/10 border border-green-600/20 rounded-lg">
               <div className="text-sm text-green-300 font-medium mb-1">
-                Save Your Conversations
+                Get More Queries
               </div>
               <div className="text-xs text-white/60 mb-2">
-                Sign up for free to track your legislative research
+                Sign up free: 10 daily queries vs 5 for anonymous users
               </div>
               <Link
                 to="/auth/signup"
