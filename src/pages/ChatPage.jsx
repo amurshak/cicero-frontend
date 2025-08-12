@@ -303,8 +303,13 @@ export default function ChatPage() {
           }
         }
         
-        // Clean, professional rate limit message
-        errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Upgrade to get more queries.`;
+        // Different messages for anonymous vs logged-in users
+        const userType = data.metadata?.user_type;
+        if (userType === 'anonymous user') {
+          errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Sign up for more...`;
+        } else {
+          errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Upgrade for more...`;
+        }
       }
       
       // Always process errors for current conversation to show user
