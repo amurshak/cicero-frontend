@@ -344,6 +344,12 @@ export default function ChatPage() {
           const currentConversationId = navConversationId || null;
           console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
           websocketService.sendQuery(messageText, currentConversationId);
+          
+          // Safety timeout in case WebSocket response never comes
+          setTimeout(() => {
+            setIsProcessing(false);
+            setAssistantStatus(null);
+          }, 10000); // 10 second timeout
         }
         
         // Clear the state to prevent re-sending
@@ -359,15 +365,34 @@ export default function ChatPage() {
       }]);
       
       // Try again after WebSocket is ready
+      let retryAttempts = 0;
+      const maxRetryAttempts = 50; // 5 seconds max
+      
       const retryInitialMessage = () => {
+        retryAttempts++;
         if (websocketService.ws?.readyState === WebSocket.OPEN) {
           console.log('Retrying initial message send:', initialMessage);
           setIsProcessing(true);
           const currentConversationId = navConversationId || null;
           websocketService.sendQuery(initialMessage, currentConversationId);
           navigate(location.pathname, { replace: true });
-        } else {
+          
+          // Safety timeout in case error handler doesn't fire
+          setTimeout(() => {
+            setIsProcessing(false);
+            setAssistantStatus(null);
+          }, 10000); // 10 second timeout
+          
+        } else if (retryAttempts < maxRetryAttempts) {
           setTimeout(retryInitialMessage, 100);
+        } else {
+          console.error('WebSocket connection timeout for initial message');
+          setIsProcessing(false);
+          setMessages(prev => [...prev, {
+            type: 'error',
+            content: 'Connection failed. Please refresh and try again.',
+            timestamp: new Date()
+          }]);
         }
       };
       setTimeout(retryInitialMessage, 100);
