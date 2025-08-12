@@ -6,6 +6,7 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
     this.isConnecting = false;
+    this.sessionId = null; // Store session ID for persistence
   }
 
   connect(token) {
@@ -73,6 +74,15 @@ class WebSocketService {
 
   handleMessage(data) {
     console.log('WebSocket received:', data);
+    
+    // Capture session ID from WebSocket responses for persistence
+    if (data.metadata && data.metadata.session_id) {
+      if (!this.sessionId) {
+        console.log('🔗 Captured new session ID:', data.metadata.session_id);
+      }
+      this.sessionId = data.metadata.session_id;
+    }
+    
     const { type } = data;
     const handlers = this.messageHandlers.get(type) || [];
     if (handlers.length === 0) {
@@ -105,11 +115,14 @@ class WebSocketService {
   }
 
   sendQuery(query, conversationId = null, sessionId = null) {
+    // Use captured session ID if no explicit session ID provided
+    const effectiveSessionId = sessionId || this.sessionId;
+    
     const message = {
       type: 'query',
       content: query,
       conversation_id: conversationId,
-      session_id: sessionId,
+      session_id: effectiveSessionId,
       timestamp: new Date().toISOString()
     };
     console.log('Sending query:', message);
@@ -138,6 +151,7 @@ class WebSocketService {
       this.ws = null;
     }
     this.messageHandlers.clear();
+    this.sessionId = null; // Clear session ID on disconnect
   }
 }
 
