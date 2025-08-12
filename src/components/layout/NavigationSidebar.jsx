@@ -222,7 +222,7 @@ export function NavigationSidebar() {
                 Sign up free: 10 daily queries vs 5 for anonymous users
               </div>
               <Link
-                to="/auth/signup"
+                to="/signup"
                 className="text-xs text-green-400 hover:text-green-300 font-medium"
               >
                 Sign Up Free →
