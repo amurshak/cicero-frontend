@@ -304,11 +304,30 @@ export default function ChatPage() {
         metadata: data.metadata
       });
       
+      // Check if this is a rate limit error and provide helpful messaging
+      let errorContent = data.content || data.error || 'Unknown error occurred';
+      let isRateLimit = data.metadata?.rate_limit || errorContent.includes('Rate limit exceeded');
+      
+      if (isRateLimit) {
+        // Enhanced rate limit messaging for better UX
+        errorContent = `🚫 **Daily query limit reached**
+
+You've used all your free queries for today. The limit resets at midnight UTC.
+
+**Want more queries?**
+• **Sign up free** for 10 daily queries (vs 5 for anonymous users)
+• **Upgrade to Pro** for 100 daily queries + conversation history
+• **Enterprise** for unlimited queries
+
+[Sign Up Free](/auth/signup) to get started!`;
+      }
+      
       // Always process errors for current conversation to show user
       setMessages(prev => [...prev, {
         type: 'error',
-        content: data.content || data.error || 'Unknown error occurred',
-        timestamp: new Date()
+        content: errorContent,
+        timestamp: new Date(),
+        isRateLimit: isRateLimit
       }]);
       setCurrentStreamingMessage(null);
       setAssistantStatus(null);
