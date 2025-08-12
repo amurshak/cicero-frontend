@@ -73,7 +73,12 @@ class WebSocketService {
   }
 
   handleMessage(data) {
-    console.log('WebSocket received:', data);
+    console.log('🔍 WebSocket received message:', {
+      type: data.type,
+      content: data.content?.substring(0, 100) + '...',
+      metadata: data.metadata,
+      final: data.final
+    });
     
     // Capture session ID from WebSocket responses for persistence
     if (data.metadata && data.metadata.session_id) {
@@ -86,7 +91,9 @@ class WebSocketService {
     const { type } = data;
     const handlers = this.messageHandlers.get(type) || [];
     if (handlers.length === 0) {
-      console.warn(`No handlers registered for message type: ${type}`);
+      console.warn(`⚠️ No handlers registered for message type: ${type}`);
+    } else {
+      console.log(`📨 Processing ${type} with ${handlers.length} handlers`);
     }
     handlers.forEach(handler => handler(data));
   }

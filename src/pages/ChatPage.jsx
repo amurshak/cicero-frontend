@@ -270,9 +270,16 @@ export default function ChatPage() {
     });
 
     websocketService.on('response_complete', (data) => {
+      console.log('🏁 Response complete handler called:', {
+        responseConversationId: data.metadata?.conversation_id,
+        currentConversationId: conversationId,
+        content: data.content?.substring(0, 50) + '...'
+      });
+      
       // Only process if this response belongs to current conversation or we're creating a new one
       const responseConversationId = data.metadata?.conversation_id;
       if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
+        console.log('✅ Processing response_complete for anonymous user');
         setMessages(prev => [...prev, {
           type: 'assistant',
           content: data.content || data.response,
@@ -291,10 +298,16 @@ export default function ChatPage() {
     });
 
     websocketService.on('error', (data) => {
+      console.log('❌ Error handler called:', {
+        content: data.content,
+        error: data.error,
+        metadata: data.metadata
+      });
+      
       // Always process errors for current conversation to show user
       setMessages(prev => [...prev, {
         type: 'error',
-        content: data.error,
+        content: data.content || data.error || 'Unknown error occurred',
         timestamp: new Date()
       }]);
       setCurrentStreamingMessage(null);
