@@ -129,6 +129,20 @@ class WebSocketService {
     // Use captured session ID if no explicit session ID provided
     const effectiveSessionId = sessionId || this.sessionId;
     
+    // Check if WebSocket is actually ready before sending
+    if (this.ws?.readyState !== WebSocket.OPEN) {
+      console.error('❌ WebSocket not ready for sending, readyState:', this.ws?.readyState);
+      // Try to reconnect
+      const token = localStorage.getItem('authToken');
+      this.connect(token).then(() => {
+        console.log('🔄 Reconnected, retrying query send');
+        this.sendQuery(query, conversationId, sessionId);
+      }).catch(error => {
+        console.error('Failed to reconnect:', error);
+      });
+      return;
+    }
+    
     const message = {
       type: 'query',
       content: query,
