@@ -324,12 +324,13 @@ export default function ChatPage() {
     // Handle initial message from home page navigation
     // This runs after WebSocket connection and handlers are set up
     const { initialMessage, conversationId: navConversationId } = location.state || {};
-    if (initialMessage && websocketService.ws?.readyState === WebSocket.OPEN) {
+    if (initialMessage && !isConnecting && websocketService.ws?.readyState === WebSocket.OPEN) {
       console.log('Processing initial message from navigation:', initialMessage);
+      // Wait a bit longer to ensure handlers are fully set up
       setTimeout(() => {
         const messageText = initialMessage;
         if (messageText.trim()) {
-          // Add user message
+          // Add user message first, so it's always visible
           setMessages(prev => [...prev, {
             type: 'user',
             content: messageText,
@@ -347,7 +348,29 @@ export default function ChatPage() {
         
         // Clear the state to prevent re-sending
         navigate(location.pathname, { replace: true });
-      }, 100);
+      }, 200);
+    } else if (initialMessage) {
+      // WebSocket not ready yet, but still show the user's message
+      console.log('WebSocket not ready, showing message but not sending yet:', initialMessage);
+      setMessages(prev => [...prev, {
+        type: 'user',
+        content: initialMessage,
+        timestamp: new Date()
+      }]);
+      
+      // Try again after WebSocket is ready
+      const retryInitialMessage = () => {
+        if (websocketService.ws?.readyState === WebSocket.OPEN) {
+          console.log('Retrying initial message send:', initialMessage);
+          setIsProcessing(true);
+          const currentConversationId = navConversationId || null;
+          websocketService.sendQuery(initialMessage, currentConversationId);
+          navigate(location.pathname, { replace: true });
+        } else {
+          setTimeout(retryInitialMessage, 100);
+        }
+      };
+      setTimeout(retryInitialMessage, 100);
     }
 
     return () => {
