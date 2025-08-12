@@ -303,17 +303,8 @@ export default function ChatPage() {
           }
         }
         
-        // Enhanced rate limit messaging for better UX
-        errorContent = `🚫 **Daily limit reached** 
-
-Your free queries reset at ${resetTimeText}. 
-
-**Get more queries:**
-• Sign up free → 10/day (vs 5 anonymous)  
-• Pro plan → 100/day + history
-• Enterprise → unlimited
-
-[Sign Up Free →](/auth/signup)`;
+        // Clean, professional rate limit message
+        errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Upgrade to get more queries.`;
       }
       
       // Always process errors for current conversation to show user
