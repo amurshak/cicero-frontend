@@ -274,10 +274,11 @@ export default function ChatPage() {
     });
 
     websocketService.on('error', (data) => {
-      console.log('❌ Error handler called:', {
+      console.log('❌ Error handler called for homepage query:', {
         content: data.content,
         error: data.error,
-        metadata: data.metadata
+        metadata: data.metadata,
+        isFromHomepage: !!initialMessage
       });
       
       // Check if this is a rate limit error and provide helpful messaging
@@ -310,6 +311,12 @@ export default function ChatPage() {
       }
       
       // Always process errors for current conversation to show user
+      console.log('🚨 Adding error message to chat:', {
+        errorContent,
+        isRateLimit,
+        userType: data.metadata?.user_type
+      });
+      
       setMessages(prev => [...prev, {
         type: 'error',
         content: errorContent,
@@ -319,6 +326,8 @@ export default function ChatPage() {
       setCurrentStreamingMessage(null);
       setAssistantStatus(null);
       setIsProcessing(false);
+      
+      console.log('✅ Processing state cleared after error');
     });
 
     // Handle initial message from home page navigation
@@ -346,10 +355,12 @@ export default function ChatPage() {
           websocketService.sendQuery(messageText, currentConversationId);
           
           // Safety timeout in case WebSocket response never comes
+          // Rate limits should respond immediately, so shorter timeout
           setTimeout(() => {
+            console.warn('No WebSocket response received, clearing processing state');
             setIsProcessing(false);
             setAssistantStatus(null);
-          }, 10000); // 10 second timeout
+          }, 3000); // 3 second timeout for faster feedback
         }
         
         // Clear the state to prevent re-sending
@@ -379,9 +390,10 @@ export default function ChatPage() {
           
           // Safety timeout in case error handler doesn't fire
           setTimeout(() => {
+            console.warn('No WebSocket response received in retry, clearing processing state');
             setIsProcessing(false);
             setAssistantStatus(null);
-          }, 10000); // 10 second timeout
+          }, 3000); // 3 second timeout for faster feedback
           
         } else if (retryAttempts < maxRetryAttempts) {
           setTimeout(retryInitialMessage, 100);
