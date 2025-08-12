@@ -285,30 +285,27 @@ export default function ChatPage() {
       let isRateLimit = data.metadata?.rate_limit || errorContent.includes('Rate limit exceeded');
       
       if (isRateLimit) {
-        // Extract reset time and convert to local time
+        // Calculate hours until reset (24 hours from first query)
         const resetTime = data.metadata?.reset_time;
-        let resetTimeText = "midnight UTC";
+        let resetText = "in 24 hours";
         
         if (resetTime) {
           try {
             const resetDate = new Date(resetTime);
-            resetTimeText = resetDate.toLocaleTimeString('en-US', {
-              hour: 'numeric',
-              minute: '2-digit',
-              timeZoneName: 'short'
-            });
+            const now = new Date();
+            const hoursUntilReset = Math.ceil((resetDate - now) / (1000 * 60 * 60));
+            resetText = hoursUntilReset > 1 ? `in ${hoursUntilReset} hours` : "in less than 1 hour";
           } catch (e) {
-            // Fall back to UTC if parsing fails
-            resetTimeText = "midnight UTC";
+            resetText = "in 24 hours";
           }
         }
         
         // Different messages for anonymous vs logged-in users
         const userType = data.metadata?.user_type;
         if (userType === 'anonymous user') {
-          errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Sign up for more...`;
+          errorContent = `Daily query limit reached. Your limit resets ${resetText}. Sign up for more...`;
         } else {
-          errorContent = `Daily query limit reached. Your daily limit resets at ${resetTimeText}. Upgrade for more...`;
+          errorContent = `Daily query limit reached. Your limit resets ${resetText}. Upgrade for more...`;
         }
       }
       
