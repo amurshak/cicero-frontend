@@ -50,8 +50,10 @@ class WebSocketService {
       };
 
       this.ws.onmessage = (event) => {
+        console.log('📥 Raw WebSocket message received:', event.data);
         try {
           const data = JSON.parse(event.data);
+          console.log('📋 Parsed WebSocket data:', data);
           this.handleMessage(data);
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error);
@@ -115,9 +117,11 @@ class WebSocketService {
 
   send(data) {
     if (this.ws?.readyState === WebSocket.OPEN) {
+      console.log('📤 Sending WebSocket message:', data);
       this.ws.send(JSON.stringify(data));
+      console.log('✅ Message sent successfully');
     } else {
-      console.error('WebSocket is not connected');
+      console.error('❌ WebSocket is not connected, readyState:', this.ws?.readyState);
     }
   }
 
