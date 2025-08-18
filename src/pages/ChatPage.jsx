@@ -60,12 +60,18 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // Auto-scroll only if already at bottom when new messages arrive
+  // Auto-scroll when new messages arrive or conversation state changes
   useEffect(() => {
-    if (isAtBottom()) {
+    // Always scroll when user just sent a message or assistant is responding
+    const shouldAutoScroll = isAtBottom() || 
+                           chatState.conversation === CONVERSATION_STATES.THINKING ||
+                           chatState.conversation === CONVERSATION_STATES.SEARCHING ||
+                           chatState.conversation === CONVERSATION_STATES.STREAMING;
+    
+    if (shouldAutoScroll) {
       scrollToBottom();
     }
-  }, [messages, currentStreamingMessage]);
+  }, [messages, currentStreamingMessage, chatState.conversation]);
 
   // Update scroll indicator visibility based on scroll position
   const handleScroll = () => {
@@ -386,6 +392,11 @@ export default function ChatPage() {
           // Set processing state
           chatState.sendMessage();
           
+          // Auto-scroll to show the message
+          setTimeout(() => {
+            scrollToBottom();
+          }, 100);
+          
           // Send via WebSocket  
           const currentConversationId = navConversationId || null;
           console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
@@ -496,6 +507,11 @@ export default function ChatPage() {
     // Clear input and update state
     setInputMessage('');
     chatState.sendMessage();
+    
+    // Auto-scroll to bottom when user sends a message
+    setTimeout(() => {
+      scrollToBottom();
+    }, 100); // Small delay to ensure message is rendered
 
     // Send via WebSocket
     console.log('Sending message via WebSocket:', messageText, 'Conversation ID:', conversationId);
