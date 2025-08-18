@@ -384,7 +384,7 @@ export default function ChatPage() {
           }]);
           
           // Set processing state
-          setIsProcessing(true);
+          chatState.sendMessage();
           
           // Send via WebSocket  
           const currentConversationId = navConversationId || null;
@@ -395,8 +395,7 @@ export default function ChatPage() {
           // Rate limits should respond immediately, so shorter timeout
           setTimeout(() => {
             console.warn('No WebSocket response received, clearing processing state');
-            setIsProcessing(false);
-            setAssistantStatus(null);
+            chatState.reset();
           }, 5000); // 5 second timeout to allow for server processing
         }
         
@@ -420,7 +419,7 @@ export default function ChatPage() {
         retryAttempts++;
         if (websocketService.ws?.readyState === WebSocket.OPEN) {
           console.log('Retrying initial message send:', initialMessage);
-          setIsProcessing(true);
+          chatState.sendMessage();
           const currentConversationId = navConversationId || null;
           websocketService.sendQuery(initialMessage, currentConversationId);
           navigate(location.pathname, { replace: true });
@@ -428,15 +427,14 @@ export default function ChatPage() {
           // Safety timeout in case error handler doesn't fire
           setTimeout(() => {
             console.warn('No WebSocket response received in retry, clearing processing state');
-            setIsProcessing(false);
-            setAssistantStatus(null);
+            chatState.reset();
           }, 3000); // 3 second timeout for faster feedback
           
         } else if (retryAttempts < maxRetryAttempts) {
           setTimeout(retryInitialMessage, 100);
         } else {
           console.error('WebSocket connection timeout for initial message');
-          setIsProcessing(false);
+          chatState.setError('Connection timeout');
           setMessages(prev => [...prev, {
             type: 'error',
             content: 'Connection failed. Please refresh and try again.',
