@@ -30,37 +30,76 @@ export const EVENTS = {
 
 // Helper functions that work with usePostHog hook
 export const trackEvent = (posthog, eventName, properties = {}) => {
-  if (!posthog) return;
+  if (!posthog) {
+    if (import.meta.env.DEV) {
+      console.log('PostHog not available - would track:', eventName, properties);
+    }
+    return;
+  }
   
-  // Add common properties
-  const enrichedProperties = {
-    ...properties,
-    timestamp: new Date().toISOString(),
-    environment: import.meta.env.MODE,
-  };
-  
-  posthog.capture(eventName, enrichedProperties);
+  try {
+    // Add common properties
+    const enrichedProperties = {
+      ...properties,
+      timestamp: new Date().toISOString(),
+      environment: import.meta.env.MODE,
+    };
+    
+    posthog.capture(eventName, enrichedProperties);
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('PostHog tracking failed:', error);
+    }
+  }
 };
 
 // User identification
 export const identifyUser = (posthog, userId, userProperties = {}) => {
-  if (!posthog) return;
+  if (!posthog) {
+    if (import.meta.env.DEV) {
+      console.log('PostHog not available - would identify user:', userId);
+    }
+    return;
+  }
   
-  posthog.identify(userId, {
-    ...userProperties,
-    identified_at: new Date().toISOString(),
-  });
+  try {
+    posthog.identify(userId, {
+      ...userProperties,
+      identified_at: new Date().toISOString(),
+    });
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('PostHog identify failed:', error);
+    }
+  }
 };
 
 // Reset user (for logout)
 export const resetUser = (posthog) => {
-  if (!posthog) return;
-  posthog.reset();
+  if (!posthog) {
+    if (import.meta.env.DEV) {
+      console.log('PostHog not available - would reset user');
+    }
+    return;
+  }
+  
+  try {
+    posthog.reset();
+  } catch (error) {
+    if (import.meta.env.DEV) {
+      console.warn('PostHog reset failed:', error);
+    }
+  }
 };
 
 // Track page views manually
 export const trackPageView = (posthog, pageName, properties = {}) => {
-  if (!posthog) return;
+  if (!posthog) {
+    if (import.meta.env.DEV) {
+      console.log('PostHog not available - would track page view:', pageName);
+    }
+    return;
+  }
   
   trackEvent(posthog, EVENTS.PAGE_VIEW, {
     page_name: pageName,
