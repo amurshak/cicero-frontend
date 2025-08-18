@@ -13,18 +13,21 @@ const options = {
   capture_pageview: false, // We handle pageviews manually
   capture_pageleave: false, // Disable to reduce blocked requests
   persistence: 'localStorage+cookie',
-  session_recording: {
-    maskAllInputs: false,
-    maskInputOptions: { password: true }
-  },
   person_profiles: 'identified_only',
-  // Disable features that trigger automatic requests
+  // Aggressively disable all automatic features to prevent ad blocker issues
   disable_session_recording: true,
   disable_scroll_properties: true,
   disable_web_experiments: true,
-  loaded: (posthog) => {
+  disable_surveys: true,
+  disable_compression: true,
+  advanced_disable_decide: true,
+  advanced_disable_feature_flags: true,
+  advanced_disable_feature_flags_on_first_load: true,
+  advanced_disable_toolbar_metrics: true,
+  opt_out_capturing_by_default: false, // Keep this false so manual tracking works
+  loaded: () => {
     if (import.meta.env.DEV) {
-      console.log('PostHog loaded successfully');
+      console.log('PostHog loaded successfully with minimal features');
     }
   }
 }
