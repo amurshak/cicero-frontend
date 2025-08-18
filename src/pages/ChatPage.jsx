@@ -7,6 +7,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
 import { trackEvent, EVENTS } from '../services/posthog';
+import { useChatStateMachine, CHAT_STATES } from '../hooks/useChatStateMachine';
 
 export default function ChatPage() {
   const location = useLocation();
@@ -14,13 +15,15 @@ export default function ChatPage() {
   const { user } = useAuth();
   const { websocketService, isConnected } = useWebSocket();
   const posthog = usePostHog();
+  
+  // Use state machine for chat state management
+  const chatState = useChatStateMachine();
+  
+  // UI state
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isConnecting, setIsConnecting] = useState(!isConnected);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [currentStreamingMessage, setCurrentStreamingMessage] = useState(null);
   const [showScrollIndicator, setShowScrollIndicator] = useState(false);
-  const [assistantStatus, setAssistantStatus] = useState(null); // 'thinking' | 'searching' | 'writing' | null
   const [thinkingTermIndex, setThinkingTermIndex] = useState(0);
   const [conversationId, setConversationId] = useState(null);
   const [conversationTitle, setConversationTitle] = useState(null);
@@ -76,16 +79,16 @@ export default function ChatPage() {
     }
   }, [messages]);
 
-  // Cycle through thinking terms when status is 'thinking'
+  // Cycle through thinking terms when in thinking state
   useEffect(() => {
-    if (assistantStatus === 'thinking') {
+    if (chatState.state === CHAT_STATES.THINKING) {
       const interval = setInterval(() => {
         setThinkingTermIndex(prev => (prev + 1) % thinkingTerms.length);
       }, 2500); // Change term every 2.5 seconds
       
       return () => clearInterval(interval);
     }
-  }, [assistantStatus, thinkingTerms.length]);
+  }, [chatState.state, thinkingTerms.length]);
 
   // Function to load conversation history
   const loadConversationHistory = async (convId) => {
@@ -150,9 +153,8 @@ export default function ChatPage() {
       setConversationId(navConversationId);
       console.log(`Resuming conversation: ${navConversationId}`);
       
-      // Reset processing state when switching conversations
-      setIsProcessing(false);
-      setAssistantStatus(null);
+      // Reset chat state when switching conversations
+      chatState.reset();
       setCurrentStreamingMessage(null);
       
       // Load conversation history
@@ -163,9 +165,8 @@ export default function ChatPage() {
       setConversationTitle(null); // Clear conversation title
       setMessages([]); // Clear any existing messages
       
-      // Reset processing state for new conversation
-      setIsProcessing(false);
-      setAssistantStatus(null);
+      // Reset chat state for new conversation
+      chatState.reset();
       setCurrentStreamingMessage(null);
       
       console.log('Starting new conversation');
@@ -176,21 +177,23 @@ export default function ChatPage() {
   }, [location.state, navigate]); // Re-run when location state changes
 
   useEffect(() => {
-    // Update connecting state based on WebSocket context
-    setIsConnecting(!isConnected);
-    
+    // Update connection state based on WebSocket context
     if (isConnected) {
       console.log('✅ Using existing WebSocket connection from context');
+      chatState.connected();
+    } else {
+      chatState.disconnect();
     }
 
     // Define message handlers (store references for cleanup)
     const connectedHandler = (data) => {
       console.log('Connected:', data);
+      chatState.connected();
     };
 
     const queryReceivedHandler = (data) => {
       console.log('Query received:', data);
-      setAssistantStatus('thinking');
+      chatState.startThinking();
       setCurrentStreamingMessage(null);
       setThinkingTermIndex(0); // Reset to first term
       
@@ -199,7 +202,7 @@ export default function ChatPage() {
     };
 
     const reasoningUpdateHandler = (data) => {
-      setAssistantStatus('thinking');
+      chatState.startThinking();
       // Don't show reasoning content to user, just the status
       
       // Check if this contains conversation ID for new conversations
@@ -207,12 +210,12 @@ export default function ChatPage() {
     };
 
     const toolStartHandler = (data) => {
-      setAssistantStatus('searching');
+      chatState.startSearching();
       // Don't show tool details to user, just the status
     };
 
     const toolResultHandler = (data) => {
-      setAssistantStatus('searching');
+      chatState.startSearching();
       // Don't show tool results to user, just the status
     };
 
@@ -221,7 +224,7 @@ export default function ChatPage() {
       // Only process if this response belongs to current conversation or we're creating a new one
       const responseConversationId = data.metadata?.conversation_id;
       if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
-        setAssistantStatus(null); // Clear typing indicator when text starts streaming
+        chatState.startStreaming(); // Move to streaming state
         setCurrentStreamingMessage(prev => {
           const existingContent = prev?.content || '';
           const newContent = existingContent + data.chunk;
@@ -266,8 +269,7 @@ export default function ChatPage() {
         handleNewConversationId(data.metadata?.conversation_id, 'response_complete');
         
         setCurrentStreamingMessage(null);
-        setAssistantStatus(null);
-        setIsProcessing(false);
+        chatState.responseComplete();
       } else {
         console.log('📝 Ignoring response complete for different conversation:', responseConversationId, 'vs current:', conversationId);
       }
@@ -333,14 +335,30 @@ export default function ChatPage() {
         isRateLimit: isRateLimit
       }]);
       setCurrentStreamingMessage(null);
-      setAssistantStatus(null);
-      setIsProcessing(false);
+      
+      // Set appropriate state based on error type
+      if (isRateLimit) {
+        chatState.setRateLimit({ 
+          reset_time: data.metadata?.reset_time,
+          user_type: data.metadata?.user_type 
+        });
+      } else {
+        chatState.setError(errorContent);
+      }
       
       console.log('✅ Processing state cleared after error');
     };
 
+    // Add disconnection handler to reset chat state
+    const disconnectedHandler = () => {
+      console.log('⚠️ WebSocket disconnected');
+      chatState.disconnect();
+      setCurrentStreamingMessage(null);
+    };
+
     // Register all handlers
     websocketService.on('connected', connectedHandler);
+    websocketService.on('disconnected', disconnectedHandler);
     websocketService.on('query_received', queryReceivedHandler);
     websocketService.on('reasoning_update', reasoningUpdateHandler);
     websocketService.on('tool_start', toolStartHandler);
@@ -446,7 +464,7 @@ export default function ChatPage() {
   }, [location.state, navigate, isConnected]); // Include WebSocket connection state
 
   const handleSendMessage = (messageText = inputMessage) => {
-    if (!messageText.trim() || isProcessing || isConnecting) return;
+    if (!messageText.trim() || !chatState.canSendMessage) return;
 
     // Track chat message sent
     trackEvent(posthog, EVENTS.CHAT_MESSAGE_SENT, {
@@ -473,9 +491,9 @@ export default function ChatPage() {
       timestamp: new Date()
     }]);
 
-    // Clear input
+    // Clear input and update state
     setInputMessage('');
-    setIsProcessing(true);
+    chatState.sendMessage();
 
     // Send via WebSocket
     console.log('Sending message via WebSocket:', messageText, 'Conversation ID:', conversationId);
@@ -516,8 +534,8 @@ export default function ChatPage() {
                 {conversationTitle || 'Legislative Intelligence Chat'}
               </h1>
               <p className="text-sm text-white/60">
-                {isConnecting ? 'Connecting...' : 
-                 websocketService.ws?.readyState === WebSocket.OPEN ? '🟢 Connected' : '🔴 Disconnected'}
+                {chatState.state === CHAT_STATES.CONNECTING ? 'Connecting...' : 
+                 chatState.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
               </p>
             </div>
           </div>
@@ -574,7 +592,7 @@ export default function ChatPage() {
           ))}
           
           {/* Typing Indicator */}
-          {assistantStatus && !currentStreamingMessage && (
+          {(chatState.state === CHAT_STATES.THINKING || chatState.state === CHAT_STATES.SEARCHING) && !currentStreamingMessage && (
             <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
               <div className="px-4 py-6">
                 <div className="flex gap-4">
@@ -585,7 +603,7 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      {assistantStatus === 'thinking' && (
+                      {chatState.state === CHAT_STATES.THINKING && (
                         <>
                           <div className="relative flex items-center gap-2">
                             <span className="text-white/60">Cicero is</span>
@@ -613,13 +631,13 @@ export default function ChatPage() {
                           </div>
                         </>
                       )}
-                      {assistantStatus === 'searching' && (
+                      {chatState.state === CHAT_STATES.SEARCHING && (
                         <>
                           <span className="text-white/60">Searching legislative data</span>
                           <Loader2 className="animate-spin w-4 h-4 text-blue-400" />
                         </>
                       )}
-                      {assistantStatus === 'writing' && (
+                      {chatState.state === CHAT_STATES.STREAMING && (
                         <>
                           <span className="text-white/60">Cicero is writing</span>
                           <div className="flex gap-1">
@@ -688,7 +706,7 @@ export default function ChatPage() {
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder="Ask about bills, members, voting records..."
-              disabled={isProcessing || isConnecting}
+              disabled={!chatState.canSendMessage}
               className="w-full px-4 py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-base text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
               rows="1"
               style={{ 
@@ -699,10 +717,10 @@ export default function ChatPage() {
             />
             <button
               onClick={() => handleSendMessage()}
-              disabled={!inputMessage.trim() || isProcessing || isConnecting}
+              disabled={!inputMessage.trim() || !chatState.canSendMessage}
               className="absolute right-2 bottom-2 p-2 bg-white/10 hover:bg-white/20 disabled:bg-transparent disabled:cursor-not-allowed rounded-lg transition-all"
             >
-              {isProcessing ? (
+              {chatState.isProcessing ? (
                 <Loader2 size={16} className="text-white/60 animate-spin" />
               ) : (
                 <Send size={16} className="text-white/60" />
