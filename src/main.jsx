@@ -24,7 +24,7 @@ const options = {
   advanced_disable_feature_flags: true,
   advanced_disable_feature_flags_on_first_load: true,
   advanced_disable_toolbar_metrics: true,
-  opt_out_capturing_by_default: false, // Keep this false so manual tracking works
+  opt_out_capturing_by_default: true, // Disable all automatic capturing to prevent ad blocker requests
   loaded: () => {
     if (import.meta.env.DEV) {
       console.log('PostHog loaded successfully with minimal features');
