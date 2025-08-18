@@ -1,26 +1,32 @@
 import { useReducer, useCallback } from 'react';
 
-// Chat states - mutually exclusive
-export const CHAT_STATES = {
+// Hierarchical States - Separated Connection and Conversation
+export const CONNECTION_STATES = {
+  DISCONNECTED: 'disconnected',
+  CONNECTING: 'connecting',
+  CONNECTED: 'connected',
+  ERROR: 'connection_error'
+};
+
+export const CONVERSATION_STATES = {
   IDLE: 'idle',                    // Ready for input
-  CONNECTING: 'connecting',         // WebSocket connecting
   SENDING: 'sending',               // Message sent, waiting for acknowledgment
   THINKING: 'thinking',             // Agent is processing (reasoning)
   SEARCHING: 'searching',           // Agent is searching/using tools
   STREAMING: 'streaming',           // Receiving response chunks
-  ERROR: 'error',                   // Error occurred
-  RATE_LIMITED: 'rate_limited',     // Rate limit reached
-  DISCONNECTED: 'disconnected'      // WebSocket disconnected
+  ERROR: 'conversation_error',      // Error occurred
+  RATE_LIMITED: 'rate_limited'      // Rate limit reached
 };
 
 // Action types
 export const CHAT_ACTIONS = {
-  // Connection events
+  // Connection events - Can happen from any state
   CONNECT: 'CONNECT',
   CONNECTED: 'CONNECTED',
   DISCONNECTED: 'DISCONNECTED',
+  CONNECTION_ERROR: 'CONNECTION_ERROR',
   
-  // Message flow events
+  // Message flow events - Guarded by connection state
   SEND_MESSAGE: 'SEND_MESSAGE',
   MESSAGE_ACKNOWLEDGED: 'MESSAGE_ACKNOWLEDGED',
   
@@ -31,7 +37,7 @@ export const CHAT_ACTIONS = {
   RESPONSE_COMPLETE: 'RESPONSE_COMPLETE',
   
   // Error events
-  ERROR: 'ERROR',
+  CONVERSATION_ERROR: 'CONVERSATION_ERROR',
   RATE_LIMIT: 'RATE_LIMIT',
   CLEAR_ERROR: 'CLEAR_ERROR',
   
@@ -39,139 +45,203 @@ export const CHAT_ACTIONS = {
   RESET: 'RESET'
 };
 
-// Initial state
+// Initial state - Hierarchical structure
 const initialState = {
-  currentState: CHAT_STATES.CONNECTING,
-  previousState: null,
+  connection: CONNECTION_STATES.CONNECTING,
+  conversation: CONVERSATION_STATES.IDLE,
   error: null,
   metadata: {}
 };
 
-// State machine transition rules
-const transitions = {
-  [CHAT_STATES.IDLE]: {
-    [CHAT_ACTIONS.SEND_MESSAGE]: CHAT_STATES.SENDING,
-    [CHAT_ACTIONS.DISCONNECTED]: CHAT_STATES.DISCONNECTED,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR
+// Connection state transitions - Can happen from any conversation state
+const connectionTransitions = {
+  [CONNECTION_STATES.DISCONNECTED]: {
+    [CHAT_ACTIONS.CONNECT]: CONNECTION_STATES.CONNECTING,
+    [CHAT_ACTIONS.CONNECTED]: CONNECTION_STATES.CONNECTED
   },
-  [CHAT_STATES.CONNECTING]: {
-    [CHAT_ACTIONS.CONNECTED]: CHAT_STATES.IDLE,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR
+  [CONNECTION_STATES.CONNECTING]: {
+    [CHAT_ACTIONS.CONNECTED]: CONNECTION_STATES.CONNECTED,
+    [CHAT_ACTIONS.CONNECTION_ERROR]: CONNECTION_STATES.ERROR,
+    [CHAT_ACTIONS.DISCONNECTED]: CONNECTION_STATES.DISCONNECTED
   },
-  [CHAT_STATES.SENDING]: {
-    [CHAT_ACTIONS.MESSAGE_ACKNOWLEDGED]: CHAT_STATES.THINKING,
-    [CHAT_ACTIONS.START_THINKING]: CHAT_STATES.THINKING,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR,
-    [CHAT_ACTIONS.RATE_LIMIT]: CHAT_STATES.RATE_LIMITED,
-    [CHAT_ACTIONS.DISCONNECTED]: CHAT_STATES.DISCONNECTED
+  [CONNECTION_STATES.CONNECTED]: {
+    [CHAT_ACTIONS.DISCONNECTED]: CONNECTION_STATES.DISCONNECTED,
+    [CHAT_ACTIONS.CONNECTION_ERROR]: CONNECTION_STATES.ERROR
   },
-  [CHAT_STATES.THINKING]: {
-    [CHAT_ACTIONS.START_SEARCHING]: CHAT_STATES.SEARCHING,
-    [CHAT_ACTIONS.START_STREAMING]: CHAT_STATES.STREAMING,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR,
-    [CHAT_ACTIONS.DISCONNECTED]: CHAT_STATES.DISCONNECTED
-  },
-  [CHAT_STATES.SEARCHING]: {
-    [CHAT_ACTIONS.START_THINKING]: CHAT_STATES.THINKING,
-    [CHAT_ACTIONS.START_STREAMING]: CHAT_STATES.STREAMING,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR,
-    [CHAT_ACTIONS.DISCONNECTED]: CHAT_STATES.DISCONNECTED
-  },
-  [CHAT_STATES.STREAMING]: {
-    [CHAT_ACTIONS.RESPONSE_COMPLETE]: CHAT_STATES.IDLE,
-    [CHAT_ACTIONS.ERROR]: CHAT_STATES.ERROR,
-    [CHAT_ACTIONS.DISCONNECTED]: CHAT_STATES.DISCONNECTED
-  },
-  [CHAT_STATES.ERROR]: {
-    [CHAT_ACTIONS.CLEAR_ERROR]: CHAT_STATES.IDLE,
-    [CHAT_ACTIONS.CONNECTED]: CHAT_STATES.IDLE,
-    [CHAT_ACTIONS.RESET]: CHAT_STATES.IDLE
-  },
-  [CHAT_STATES.RATE_LIMITED]: {
-    [CHAT_ACTIONS.CLEAR_ERROR]: CHAT_STATES.IDLE,
-    [CHAT_ACTIONS.RESET]: CHAT_STATES.IDLE
-  },
-  [CHAT_STATES.DISCONNECTED]: {
-    [CHAT_ACTIONS.CONNECT]: CHAT_STATES.CONNECTING,
-    [CHAT_ACTIONS.CONNECTED]: CHAT_STATES.IDLE
+  [CONNECTION_STATES.ERROR]: {
+    [CHAT_ACTIONS.CONNECT]: CONNECTION_STATES.CONNECTING,
+    [CHAT_ACTIONS.CONNECTED]: CONNECTION_STATES.CONNECTED
   }
 };
 
-// Reducer function
+// Conversation state transitions - Only valid when connected
+const conversationTransitions = {
+  [CONVERSATION_STATES.IDLE]: {
+    [CHAT_ACTIONS.SEND_MESSAGE]: CONVERSATION_STATES.SENDING
+  },
+  [CONVERSATION_STATES.SENDING]: {
+    [CHAT_ACTIONS.MESSAGE_ACKNOWLEDGED]: CONVERSATION_STATES.THINKING,
+    [CHAT_ACTIONS.START_THINKING]: CONVERSATION_STATES.THINKING,
+    [CHAT_ACTIONS.CONVERSATION_ERROR]: CONVERSATION_STATES.ERROR,
+    [CHAT_ACTIONS.RATE_LIMIT]: CONVERSATION_STATES.RATE_LIMITED
+  },
+  [CONVERSATION_STATES.THINKING]: {
+    [CHAT_ACTIONS.START_SEARCHING]: CONVERSATION_STATES.SEARCHING,
+    [CHAT_ACTIONS.START_STREAMING]: CONVERSATION_STATES.STREAMING,
+    [CHAT_ACTIONS.CONVERSATION_ERROR]: CONVERSATION_STATES.ERROR
+  },
+  [CONVERSATION_STATES.SEARCHING]: {
+    [CHAT_ACTIONS.START_THINKING]: CONVERSATION_STATES.THINKING,
+    [CHAT_ACTIONS.START_STREAMING]: CONVERSATION_STATES.STREAMING,
+    [CHAT_ACTIONS.CONVERSATION_ERROR]: CONVERSATION_STATES.ERROR
+  },
+  [CONVERSATION_STATES.STREAMING]: {
+    [CHAT_ACTIONS.RESPONSE_COMPLETE]: CONVERSATION_STATES.IDLE,
+    [CHAT_ACTIONS.CONVERSATION_ERROR]: CONVERSATION_STATES.ERROR
+  },
+  [CONVERSATION_STATES.ERROR]: {
+    [CHAT_ACTIONS.CLEAR_ERROR]: CONVERSATION_STATES.IDLE
+  },
+  [CONVERSATION_STATES.RATE_LIMITED]: {
+    [CHAT_ACTIONS.CLEAR_ERROR]: CONVERSATION_STATES.IDLE
+  }
+};
+
+// Guard conditions
+const canSendMessage = (connection, conversation) => {
+  return connection === CONNECTION_STATES.CONNECTED && conversation === CONVERSATION_STATES.IDLE;
+};
+
+const canProcessConversationEvent = (connection) => {
+  return connection === CONNECTION_STATES.CONNECTED;
+};
+
+// Reducer function - Hierarchical state management
 function chatReducer(state, action) {
-  const { currentState } = state;
-  const allowedTransitions = transitions[currentState] || {};
-  const nextState = allowedTransitions[action.type];
+  const { connection, conversation } = state;
 
   // Log state transitions for debugging
   if (process.env.NODE_ENV === 'development') {
-    console.log(`[ChatStateMachine] ${currentState} + ${action.type} → ${nextState || 'INVALID'}`);
+    console.log(`[ChatStateMachine] Connection: ${connection}, Conversation: ${conversation} + ${action.type}`);
   }
 
-  // If transition is not allowed, log warning and return current state
-  if (!nextState && action.type !== CHAT_ACTIONS.RESET) {
-    console.warn(`[ChatStateMachine] Invalid transition: ${currentState} cannot handle ${action.type}`);
-    return state;
-  }
-
-  // Handle RESET action specially - always allowed
+  // Handle RESET action - always allowed
   if (action.type === CHAT_ACTIONS.RESET) {
-    return initialState;
+    return { 
+      ...initialState,
+      connection: state.connection // Keep current connection state on reset
+    };
   }
 
-  // Update state
-  return {
-    currentState: nextState,
-    previousState: currentState,
-    error: action.type === CHAT_ACTIONS.ERROR || action.type === CHAT_ACTIONS.RATE_LIMIT 
-      ? action.payload 
-      : action.type === CHAT_ACTIONS.CLEAR_ERROR 
-        ? null 
-        : state.error,
-    metadata: action.payload || state.metadata
-  };
+  // Handle connection events - these can happen from any state
+  if ([CHAT_ACTIONS.CONNECT, CHAT_ACTIONS.CONNECTED, CHAT_ACTIONS.DISCONNECTED, CHAT_ACTIONS.CONNECTION_ERROR].includes(action.type)) {
+    const connectionTransitionMap = connectionTransitions[connection] || {};
+    const nextConnection = connectionTransitionMap[action.type];
+    
+    if (nextConnection) {
+      const newState = {
+        ...state,
+        connection: nextConnection,
+        // Reset conversation to IDLE on disconnect
+        conversation: action.type === CHAT_ACTIONS.DISCONNECTED ? CONVERSATION_STATES.IDLE : conversation,
+        error: action.type === CHAT_ACTIONS.CONNECTION_ERROR ? action.payload : state.error
+      };
+      
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[ChatStateMachine] Connection: ${connection} → ${nextConnection}`);
+      }
+      
+      return newState;
+    } else {
+      console.warn(`[ChatStateMachine] Invalid connection transition: ${connection} cannot handle ${action.type}`);
+      return state;
+    }
+  }
+
+  // Handle conversation events - only valid when connected
+  const conversationTransitionMap = conversationTransitions[conversation] || {};
+  const nextConversation = conversationTransitionMap[action.type];
+
+  if (nextConversation) {
+    // Check guard conditions for message sending
+    if (action.type === CHAT_ACTIONS.SEND_MESSAGE && !canSendMessage(connection, conversation)) {
+      console.warn(`[ChatStateMachine] Cannot send message: connection=${connection}, conversation=${conversation}`);
+      return state;
+    }
+
+    // Check guard conditions for other conversation events
+    if (!canProcessConversationEvent(connection) && 
+        ![CHAT_ACTIONS.CLEAR_ERROR].includes(action.type)) {
+      console.warn(`[ChatStateMachine] Cannot process conversation event when disconnected: ${action.type}`);
+      return state;
+    }
+
+    const newState = {
+      ...state,
+      conversation: nextConversation,
+      error: [CHAT_ACTIONS.CONVERSATION_ERROR, CHAT_ACTIONS.RATE_LIMIT].includes(action.type) 
+        ? action.payload 
+        : action.type === CHAT_ACTIONS.CLEAR_ERROR 
+          ? null 
+          : state.error,
+      metadata: action.payload || state.metadata
+    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[ChatStateMachine] Conversation: ${conversation} → ${nextConversation}`);
+    }
+
+    return newState;
+  }
+
+  // Invalid transition
+  console.warn(`[ChatStateMachine] Invalid conversation transition: ${conversation} cannot handle ${action.type}`);
+  return state;
 }
 
 // Custom hook
 export function useChatStateMachine() {
   const [state, dispatch] = useReducer(chatReducer, initialState);
 
-  // Helper functions for common transitions
+  // Helper functions for connection transitions
   const connect = useCallback(() => dispatch({ type: CHAT_ACTIONS.CONNECT }), []);
   const connected = useCallback(() => dispatch({ type: CHAT_ACTIONS.CONNECTED }), []);
   const disconnect = useCallback(() => dispatch({ type: CHAT_ACTIONS.DISCONNECTED }), []);
+  const connectionError = useCallback((error) => dispatch({ type: CHAT_ACTIONS.CONNECTION_ERROR, payload: error }), []);
   
+  // Helper functions for conversation transitions
   const sendMessage = useCallback(() => dispatch({ type: CHAT_ACTIONS.SEND_MESSAGE }), []);
   const messageAcknowledged = useCallback(() => dispatch({ type: CHAT_ACTIONS.MESSAGE_ACKNOWLEDGED }), []);
-  
   const startThinking = useCallback(() => dispatch({ type: CHAT_ACTIONS.START_THINKING }), []);
   const startSearching = useCallback(() => dispatch({ type: CHAT_ACTIONS.START_SEARCHING }), []);
   const startStreaming = useCallback(() => dispatch({ type: CHAT_ACTIONS.START_STREAMING }), []);
   const responseComplete = useCallback(() => dispatch({ type: CHAT_ACTIONS.RESPONSE_COMPLETE }), []);
   
-  const setError = useCallback((error) => dispatch({ type: CHAT_ACTIONS.ERROR, payload: error }), []);
+  // Error handling
+  const setError = useCallback((error) => dispatch({ type: CHAT_ACTIONS.CONVERSATION_ERROR, payload: error }), []);
   const setRateLimit = useCallback((info) => dispatch({ type: CHAT_ACTIONS.RATE_LIMIT, payload: info }), []);
   const clearError = useCallback(() => dispatch({ type: CHAT_ACTIONS.CLEAR_ERROR }), []);
-  
   const reset = useCallback(() => dispatch({ type: CHAT_ACTIONS.RESET }), []);
 
-  // Computed properties
-  const canSendMessage = state.currentState === CHAT_STATES.IDLE;
+  // Computed properties using hierarchical states
+  const canSendMessage = state.connection === CONNECTION_STATES.CONNECTED && 
+                        state.conversation === CONVERSATION_STATES.IDLE;
   const isProcessing = [
-    CHAT_STATES.SENDING,
-    CHAT_STATES.THINKING,
-    CHAT_STATES.SEARCHING,
-    CHAT_STATES.STREAMING
-  ].includes(state.currentState);
-  const isConnected = state.currentState !== CHAT_STATES.CONNECTING && 
-                     state.currentState !== CHAT_STATES.DISCONNECTED;
-  const hasError = state.currentState === CHAT_STATES.ERROR || 
-                   state.currentState === CHAT_STATES.RATE_LIMITED;
+    CONVERSATION_STATES.SENDING,
+    CONVERSATION_STATES.THINKING,
+    CONVERSATION_STATES.SEARCHING,
+    CONVERSATION_STATES.STREAMING
+  ].includes(state.conversation);
+  const isConnected = state.connection === CONNECTION_STATES.CONNECTED;
+  const isConnecting = state.connection === CONNECTION_STATES.CONNECTING;
+  const hasError = state.conversation === CONVERSATION_STATES.ERROR || 
+                   state.conversation === CONVERSATION_STATES.RATE_LIMITED ||
+                   state.connection === CONNECTION_STATES.ERROR;
 
   return {
-    // State
-    state: state.currentState,
-    previousState: state.previousState,
+    // Hierarchical State
+    connection: state.connection,
+    conversation: state.conversation,
     error: state.error,
     metadata: state.metadata,
     
@@ -179,12 +249,16 @@ export function useChatStateMachine() {
     canSendMessage,
     isProcessing,
     isConnected,
+    isConnecting,
     hasError,
     
-    // State transition functions
+    // Connection transition functions
     connect,
     connected,
     disconnect,
+    connectionError,
+    
+    // Conversation transition functions
     sendMessage,
     messageAcknowledged,
     startThinking,
@@ -197,7 +271,11 @@ export function useChatStateMachine() {
     reset,
     
     // Raw dispatch for custom actions
-    dispatch
+    dispatch,
+    
+    // Legacy compatibility (for easier migration)
+    state: state.conversation,
+    isConnected: isConnected
   };
 }
 

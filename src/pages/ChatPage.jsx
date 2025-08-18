@@ -7,7 +7,7 @@ import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
 import { trackEvent, EVENTS } from '../services/posthog';
-import { useChatStateMachine, CHAT_STATES } from '../hooks/useChatStateMachine';
+import { useChatStateMachine, CONNECTION_STATES, CONVERSATION_STATES } from '../hooks/useChatStateMachine';
 
 export default function ChatPage() {
   const location = useLocation();
@@ -81,14 +81,14 @@ export default function ChatPage() {
 
   // Cycle through thinking terms when in thinking state
   useEffect(() => {
-    if (chatState.state === CHAT_STATES.THINKING) {
+    if (chatState.conversation === CONVERSATION_STATES.THINKING) {
       const interval = setInterval(() => {
         setThinkingTermIndex(prev => (prev + 1) % thinkingTerms.length);
       }, 2500); // Change term every 2.5 seconds
       
       return () => clearInterval(interval);
     }
-  }, [chatState.state, thinkingTerms.length]);
+  }, [chatState.conversation, thinkingTerms.length]);
 
   // Function to load conversation history
   const loadConversationHistory = async (convId) => {
@@ -532,7 +532,7 @@ export default function ChatPage() {
                 {conversationTitle || 'Legislative Intelligence Chat'}
               </h1>
               <p className="text-sm text-white/60">
-                {chatState.state === CHAT_STATES.CONNECTING ? 'Connecting...' : 
+                {chatState.connection === CONNECTION_STATES.CONNECTING ? 'Connecting...' : 
                  chatState.isConnected ? '🟢 Connected' : '🔴 Disconnected'}
               </p>
             </div>
@@ -590,7 +590,7 @@ export default function ChatPage() {
           ))}
           
           {/* Typing Indicator */}
-          {(chatState.state === CHAT_STATES.THINKING || chatState.state === CHAT_STATES.SEARCHING) && !currentStreamingMessage && (
+          {(chatState.conversation === CONVERSATION_STATES.THINKING || chatState.conversation === CONVERSATION_STATES.SEARCHING) && !currentStreamingMessage && (
             <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
               <div className="px-4 py-6">
                 <div className="flex gap-4">
@@ -601,7 +601,7 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3">
-                      {chatState.state === CHAT_STATES.THINKING && (
+                      {chatState.conversation === CONVERSATION_STATES.THINKING && (
                         <>
                           <div className="relative flex items-center gap-2">
                             <span className="text-white/60">Cicero is</span>
@@ -629,13 +629,13 @@ export default function ChatPage() {
                           </div>
                         </>
                       )}
-                      {chatState.state === CHAT_STATES.SEARCHING && (
+                      {chatState.conversation === CONVERSATION_STATES.SEARCHING && (
                         <>
                           <span className="text-white/60">Searching legislative data</span>
                           <Loader2 className="animate-spin w-4 h-4 text-blue-400" />
                         </>
                       )}
-                      {chatState.state === CHAT_STATES.STREAMING && (
+                      {chatState.conversation === CONVERSATION_STATES.STREAMING && (
                         <>
                           <span className="text-white/60">Cicero is writing</span>
                           <div className="flex gap-1">
