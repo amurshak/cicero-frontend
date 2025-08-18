@@ -1,16 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { usePostHog } from 'posthog-js/react';
 import { PageContainer } from '../components/layout/PageContainer';
 import { ArrowLeft, Send, Loader2, ChevronDown, Scale } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
+import { trackEvent, EVENTS } from '../services/posthog';
 
 export default function ChatPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { websocketService, isConnected } = useWebSocket();
+  const posthog = usePostHog();
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isConnecting, setIsConnecting] = useState(!isConnected);
@@ -245,6 +248,14 @@ export default function ChatPage() {
       const responseConversationId = data.metadata?.conversation_id;
       if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
         console.log('✅ Processing response_complete for anonymous user');
+        
+        // Track successful chat response
+        trackEvent(posthog, EVENTS.CHAT_RESPONSE_RECEIVED, {
+          response_length: (data.content || data.response || '').length,
+          conversation_id: responseConversationId,
+          user_type: user ? (user.subscription_tier || 'free') : 'anonymous'
+        });
+        
         setMessages(prev => [...prev, {
           type: 'assistant',
           content: data.content || data.response,
@@ -275,6 +286,13 @@ export default function ChatPage() {
       let isRateLimit = data.metadata?.rate_limit || errorContent.includes('Rate limit exceeded');
       
       if (isRateLimit) {
+        // Track rate limit hit
+        trackEvent(posthog, EVENTS.RATE_LIMIT_HIT, {
+          user_type: data.metadata?.user_type || 'unknown',
+          daily_limit: data.metadata?.daily_limit,
+          reset_time: data.metadata?.reset_time,
+        });
+
         // Calculate hours until reset (24 hours from first query)
         const resetTime = data.metadata?.reset_time;
         let resetText = "in 24 hours";
@@ -294,8 +312,10 @@ export default function ChatPage() {
         const userType = data.metadata?.user_type;
         if (userType === 'anonymous user') {
           errorContent = `Daily query limit reached. Your limit resets ${resetText}. Sign up for more...`;
+          trackEvent(posthog, EVENTS.RATE_LIMIT_UPGRADE_PROMPT, { action: 'sign_up_prompt' });
         } else {
           errorContent = `Daily query limit reached. Your limit resets ${resetText}. Upgrade for more...`;
+          trackEvent(posthog, EVENTS.RATE_LIMIT_UPGRADE_PROMPT, { action: 'upgrade_prompt' });
         }
       }
       
@@ -427,6 +447,13 @@ export default function ChatPage() {
 
   const handleSendMessage = (messageText = inputMessage) => {
     if (!messageText.trim() || isProcessing || isConnecting) return;
+
+    // Track chat message sent
+    trackEvent(posthog, EVENTS.CHAT_MESSAGE_SENT, {
+      message_length: messageText.length,
+      has_conversation_id: !!conversationId,
+      user_type: user ? (user.subscription_tier || 'free') : 'anonymous'
+    });
 
     // Check if WebSocket is connected
     if (!websocketService.ws || websocketService.ws.readyState !== WebSocket.OPEN) {

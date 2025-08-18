@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { usePostHog } from 'posthog-js/react';
 import { authService } from '../services/auth';
+import { identifyUser, resetUser } from '../services/posthog';
 
 export const AuthContext = createContext({});
 
@@ -7,10 +9,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const posthog = usePostHog();
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Identify or reset user in PostHog when user state changes
+  useEffect(() => {
+    if (user) {
+      // Identify user in PostHog
+      identifyUser(posthog, user.id, {
+        email: user.email,
+        display_name: user.display_name,
+        subscription_tier: user.subscription_tier || 'free',
+        oauth_provider: user.oauth_provider,
+        created_at: user.created_at,
+      });
+    } else {
+      // Reset PostHog when user logs out
+      resetUser(posthog);
+    }
+  }, [user, posthog]);
 
   const checkAuth = async () => {
     try {

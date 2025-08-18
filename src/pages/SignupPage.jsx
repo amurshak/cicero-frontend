@@ -5,6 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 import { Scale } from 'lucide-react';
+import { trackEvent, EVENTS } from '../services/posthog';
 
 export default function SignupPage() {
   const navigate = useNavigate();
@@ -48,12 +49,17 @@ export default function SignupPage() {
     setLoading(true);
     setErrors({});
     
+    // Track signup attempt
+    trackEvent(EVENTS.SIGNUP_STARTED, { method: 'google' });
+    
     const result = await loginWithGoogle(response.credential);
     
     if (result.success) {
+      trackEvent(EVENTS.SIGNUP_COMPLETED, { method: 'google' });
       navigate('/');
     } else {
       setErrors({ general: result.error });
+      trackEvent('signup_failed', { method: 'google', error: result.error });
     }
     setLoading(false);
   };
@@ -93,12 +99,17 @@ export default function SignupPage() {
     setLoading(true);
     setErrors({});
 
+    // Track signup attempt
+    trackEvent(EVENTS.SIGNUP_STARTED, { method: 'email' });
+
     const result = await signup(formData.email, formData.password, formData.displayName);
     
     if (result.success) {
+      trackEvent(EVENTS.SIGNUP_COMPLETED, { method: 'email' });
       navigate('/');
     } else {
       setErrors({ general: result.error });
+      trackEvent('signup_failed', { method: 'email', error: result.error });
     }
     setLoading(false);
   };

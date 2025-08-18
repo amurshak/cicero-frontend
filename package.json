@@ -12,12 +12,13 @@
     "health:api": "node scripts/health-check.cjs --test-api"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^4.1.0",
+    "axios": "^1.7.2",
+    "lucide-react": "^0.411.0",
+    "posthog-js": "^1.260.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.24.1",
-    "lucide-react": "^0.411.0",
-    "@stripe/stripe-js": "^4.1.0",
-    "axios": "^1.7.2"
+    "react-router-dom": "^6.24.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

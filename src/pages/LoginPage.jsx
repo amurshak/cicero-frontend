@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { usePostHog } from 'posthog-js/react';
 import { GlassCard } from '../components/shared/GlassCard';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../hooks/useAuth';
 import { Scale } from 'lucide-react';
+import { trackEvent, EVENTS } from '../services/posthog';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { user, login, loginWithGoogle, error } = useAuth();
+  const posthog = usePostHog();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -44,12 +47,17 @@ export default function LoginPage() {
     setLoading(true);
     setLocalError('');
     
+    // Track login attempt
+    trackEvent(posthog, EVENTS.LOGIN, { method: 'google' });
+    
     const result = await loginWithGoogle(response.credential);
     
     if (result.success) {
       navigate('/');
     } else {
       setLocalError(result.error);
+      // Track login failure
+      trackEvent(posthog, 'login_failed', { method: 'google', error: result.error });
     }
     setLoading(false);
   };
@@ -59,12 +67,17 @@ export default function LoginPage() {
     setLoading(true);
     setLocalError('');
 
+    // Track login attempt
+    trackEvent(posthog, EVENTS.LOGIN, { method: 'email' });
+
     const result = await login(email, password);
     
     if (result.success) {
       navigate('/');
     } else {
       setLocalError(result.error);
+      // Track login failure
+      trackEvent(posthog, 'login_failed', { method: 'email', error: result.error });
     }
     setLoading(false);
   };
