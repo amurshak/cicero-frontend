@@ -392,11 +392,13 @@ export default function ChatPage() {
           websocketService.sendQuery(messageText, currentConversationId);
           
           // Safety timeout in case WebSocket response never comes
-          // Rate limits should respond immediately, so shorter timeout
+          // Only reset if we're still in sending state (no acknowledgment received)
           setTimeout(() => {
-            console.warn('No WebSocket response received, clearing processing state');
-            chatState.reset();
-          }, 5000); // 5 second timeout to allow for server processing
+            if (chatState.conversation === CONVERSATION_STATES.SENDING) {
+              console.warn('No WebSocket response received after 30s, clearing processing state');
+              chatState.reset();
+            }
+          }, 30000); // 30 second timeout for complex queries
         }
         
         // Clear the state to prevent re-sending
@@ -426,9 +428,11 @@ export default function ChatPage() {
           
           // Safety timeout in case error handler doesn't fire
           setTimeout(() => {
-            console.warn('No WebSocket response received in retry, clearing processing state');
-            chatState.reset();
-          }, 3000); // 3 second timeout for faster feedback
+            if (chatState.conversation === CONVERSATION_STATES.SENDING) {
+              console.warn('No WebSocket response received in retry after 30s, clearing processing state');
+              chatState.reset();
+            }
+          }, 30000); // 30 second timeout for complex queries
           
         } else if (retryAttempts < maxRetryAttempts) {
           setTimeout(retryInitialMessage, 100);
