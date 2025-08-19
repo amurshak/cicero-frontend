@@ -253,6 +253,23 @@ export default function ChatPage() {
         content: data.content?.substring(0, 50) + '...'
       });
       
+      // Log rate limit information if available
+      if (data.metadata?.rate_limit) {
+        const rateLimitInfo = data.metadata.rate_limit;
+        const remainingQueries = rateLimitInfo.remaining;
+        const usedQueries = rateLimitInfo.current_usage;
+        const totalQueries = rateLimitInfo.daily_limit;
+        
+        console.log(`📊 QUERIES REMAINING: ${remainingQueries}/${totalQueries} (${usedQueries} used) - ${rateLimitInfo.user_tier} tier`);
+        console.log('📊 RATE LIMIT STATUS:', {
+          current_usage: rateLimitInfo.current_usage,
+          daily_limit: rateLimitInfo.daily_limit,
+          remaining: rateLimitInfo.remaining,
+          user_tier: rateLimitInfo.user_tier,
+          reset_time: rateLimitInfo.reset_time
+        });
+      }
+      
       // Only process if this response belongs to current conversation or we're creating a new one
       const responseConversationId = data.metadata?.conversation_id;
       if (!responseConversationId || !conversationId || responseConversationId === conversationId) {
