@@ -169,21 +169,18 @@ export default function HomePage() {
         <div className="text-center mb-8 sm:mb-12 max-w-3xl">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
             <span className="text-white">Ask me about </span>
-            <span className="relative inline-block align-bottom">
-              {/* Invisible text to maintain width */}
+            <span className="relative inline-flex" style={{ height: '1.2em', minWidth: '280px' }}>
               <span className="invisible">any legislative action</span>
-              {/* Rotating container */}
-              <div className="absolute inset-0 overflow-hidden">
+              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                 <div 
-                  className="transition-transform duration-500 ease-in-out"
-                  style={{ 
-                    transform: `translateY(calc(-${rotatingIndex} * 100%))`,
-                  }}
+                  className="w-full transition-transform duration-500 ease-in-out"
+                  style={{ transform: `translateY(${-rotatingIndex * 1.2}em)` }}
                 >
                   {rotatingTerms.map((term, index) => (
                     <div
                       key={index}
-                      className="text-blue-400 h-full flex items-center justify-center"
+                      className="text-blue-400 flex items-center justify-center"
+                      style={{ height: '1.2em' }}
                     >
                       {term}
                     </div>
