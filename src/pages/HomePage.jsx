@@ -167,27 +167,23 @@ export default function HomePage() {
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-6 sm:pb-8">
         {/* Main Prompt */}
         <div className="text-center mb-8 sm:mb-12 max-w-3xl">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-            <span className="text-white">Ask me about </span>
-            <span className="relative inline-flex" style={{ height: '1.2em', minWidth: '280px' }}>
-              <span className="invisible">any legislative action</span>
-              <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
-                <div 
-                  className="w-full transition-transform duration-500 ease-in-out"
-                  style={{ transform: `translateY(${-rotatingIndex * 1.2}em)` }}
-                >
-                  {rotatingTerms.map((term, index) => (
-                    <div
-                      key={index}
-                      className="text-blue-400 flex items-center justify-center"
-                      style={{ height: '1.2em' }}
-                    >
-                      {term}
-                    </div>
-                  ))}
-                </div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4 flex flex-col sm:flex-row items-center justify-center gap-2">
+            <span className="text-white">Ask me about</span>
+            <div className="relative h-[1.2em] w-full sm:w-auto sm:min-w-[280px] overflow-hidden">
+              <div 
+                className="absolute inset-0 flex flex-col transition-transform duration-500 ease-in-out"
+                style={{ transform: `translateY(-${rotatingIndex * 100}%)` }}
+              >
+                {rotatingTerms.map((term, index) => (
+                  <span
+                    key={index}
+                    className="text-blue-400 h-[1.2em] flex items-center justify-center"
+                  >
+                    {term}
+                  </span>
+                ))}
               </div>
-            </span>
+            </div>
           </h2>
           <p className="text-white/60 text-base sm:text-lg px-2 sm:px-0">
             Real-time congressional data powered by AI
