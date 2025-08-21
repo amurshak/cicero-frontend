@@ -144,9 +144,8 @@ export default function HomePage() {
         {/* Main Prompt */}
         <div className="text-center mb-8 sm:mb-12 max-w-3xl">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-            <span className="text-white">What legislative </span>
-            <span className="text-blue-400">information</span>
-            <span className="text-white"> do you need?</span>
+            <span className="text-white">Ask me anything about </span>
+            <span className="text-blue-400">Congress</span>
           </h2>
           <p className="text-white/60 text-base sm:text-lg px-2 sm:px-0">
             Ask me about bills, members of Congress, voting records, or any legislative process
