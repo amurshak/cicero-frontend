@@ -5,7 +5,8 @@ import {
   ChevronRight, 
   Plus,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Scale
 } from 'lucide-react';
 import { sharedStyles } from '../shared/sharedStyles';
 import { useAuth } from '../../hooks/useAuth';
@@ -120,8 +121,8 @@ export function NavigationSidebar() {
           onClick={handleHomeClick}
           className="flex items-center gap-3 w-full hover:bg-white/5 rounded-lg p-2 -m-2 transition-all group"
         >
-          <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500 transition-colors">
-            <span className="text-lg font-bold">C</span>
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-blue-500 transition-colors">
+            <Scale size={24} className="text-white" />
           </div>
           {isExpanded && (
             <div className="animate-fade-in">
