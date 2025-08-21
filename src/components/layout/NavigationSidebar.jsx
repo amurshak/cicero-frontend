@@ -257,6 +257,19 @@ export function NavigationSidebar() {
             <MoreHorizontal size={16} className="text-white/40 flex-shrink-0" />
           </button>
 
+          {isExpanded && (
+            <p className="text-xs text-white/30 px-2 mt-2">
+              Powered by{' '}
+              <a 
+                href="https://lawgiver.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-white/40 hover:text-white/60 transition-colors underline underline-offset-2"
+              >
+                Lawgiver.ai
+              </a>
+            </p>
+          )}
         </div>
       )}
     </div>

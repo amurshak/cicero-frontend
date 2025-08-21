@@ -201,13 +201,10 @@ export default function SignupPage() {
               Create Account
             </Button>
 
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/10"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-transparent text-white/50">Or sign up with</span>
-              </div>
+            <div className="relative flex items-center">
+              <div className="flex-1 border-t border-white/10"></div>
+              <span className="px-4 text-sm text-white/50">Or sign up with</span>
+              <div className="flex-1 border-t border-white/10"></div>
             </div>
 
             <div id="googleSignUpButton" className="w-full"></div>

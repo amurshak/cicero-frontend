@@ -194,6 +194,21 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Footer Attribution */}
+      <footer className="p-4 sm:p-6">
+        <p className="text-xs text-white/40 text-left">
+          Powered by{' '}
+          <a 
+            href="https://lawgiver.ai" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-white/60 hover:text-white/80 transition-colors underline underline-offset-2"
+          >
+            Lawgiver.ai
+          </a>
+        </p>
+      </footer>
     </div>
   );
 }
