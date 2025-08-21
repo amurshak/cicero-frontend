@@ -556,8 +556,8 @@ export default function ChatPage() {
     <PageContainer>
       <div className="h-full bg-primary-900 flex flex-col">
         {/* Header - No border */}
-        <div className="flex-shrink-0 p-4">
-          <div className="max-w-3xl mx-auto flex items-center gap-4">
+        <div className="flex-shrink-0 p-3 sm:p-4">
+          <div className="max-w-3xl mx-auto flex items-center gap-2 sm:gap-4">
             <button
               onClick={() => navigate('/')}
               className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-all"
@@ -565,7 +565,7 @@ export default function ChatPage() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-xl font-semibold text-white">
+              <h1 className="text-lg sm:text-xl font-semibold text-white">
                 {conversationTitle || 'Legislative Intelligence Chat'}
               </h1>
               <p className="text-sm text-white/60">
@@ -597,23 +597,23 @@ export default function ChatPage() {
             <div key={index} className="animate-fade-in">
               {message.type === 'user' ? (
                 // User message - right aligned
-                <div className="flex justify-end mb-6">
-                  <div className="max-w-[70%] px-5 py-4 bg-white/[0.08] rounded-2xl transform animate-slide-up">
-                    <p className="text-lg text-white/90 whitespace-pre-wrap">{message.content}</p>
+                <div className="flex justify-end mb-4 sm:mb-6">
+                  <div className="max-w-[85%] sm:max-w-[70%] px-3 sm:px-5 py-3 sm:py-4 bg-white/[0.08] rounded-xl sm:rounded-2xl transform animate-slide-up">
+                    <p className="text-base sm:text-lg text-white/90 whitespace-pre-wrap">{message.content}</p>
                   </div>
                 </div>
               ) : (
                 // Assistant message - full width with avatar
-                <div className="group hover:bg-white/[0.02] transition-colors mb-6 animate-slide-up">
-                  <div className="px-4 py-6">
-                    <div className="flex gap-4">
+                <div className="group hover:bg-white/[0.02] transition-colors mb-4 sm:mb-6 animate-slide-up">
+                  <div className="px-3 sm:px-4 py-4 sm:py-6">
+                    <div className="flex gap-3 sm:gap-4">
                       <div className="flex-shrink-0">
                         <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                           <Scale size={16} className="text-white/60" />
                         </div>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`whitespace-pre-wrap text-lg leading-relaxed text-white/90 ${
+                        <p className={`whitespace-pre-wrap text-base sm:text-lg leading-relaxed text-white/90 ${
                           message.type === 'error' ? 'text-red-400' : ''
                         }`}>
                           {message.content}
@@ -629,8 +629,8 @@ export default function ChatPage() {
           {/* Typing Indicator */}
           {(chatState.conversation === CONVERSATION_STATES.THINKING || chatState.conversation === CONVERSATION_STATES.SEARCHING) && !currentStreamingMessage && (
             <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
-              <div className="px-4 py-6">
-                <div className="flex gap-4">
+              <div className="px-3 sm:px-4 py-4 sm:py-6">
+                <div className="flex gap-3 sm:gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                       <Scale size={16} className="text-white/60" />
@@ -692,8 +692,8 @@ export default function ChatPage() {
           {/* Streaming message */}
           {currentStreamingMessage && (
             <div className="group hover:bg-white/[0.02] transition-colors animate-fade-in">
-              <div className="px-4 py-6">
-                <div className="flex gap-4">
+              <div className="px-3 sm:px-4 py-4 sm:py-6">
+                <div className="flex gap-3 sm:gap-4">
                   <div className="flex-shrink-0">
                     <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                       <Scale size={16} className="text-white/60" />
@@ -701,7 +701,7 @@ export default function ChatPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="relative">
-                      <p className="whitespace-pre-wrap text-lg leading-relaxed text-white/90">
+                      <p className="whitespace-pre-wrap text-base sm:text-lg leading-relaxed text-white/90">
                         {currentStreamingMessage.content}
                         {currentStreamingMessage.isStreaming && (
                           <span className="inline-block w-2 h-5 bg-blue-400 ml-1 animate-pulse"></span>
@@ -732,7 +732,7 @@ export default function ChatPage() {
       )}
 
       {/* Input - No border, integrated background */}
-      <div className="flex-shrink-0 p-4">
+      <div className="flex-shrink-0 p-3 sm:p-4">
         <div className="max-w-3xl mx-auto">
           <div className="relative">
             <textarea
@@ -742,13 +742,16 @@ export default function ChatPage() {
               onKeyDown={handleKeyDown}
               placeholder="Ask about bills, members, voting records..."
               disabled={!chatState.canSendMessage}
-              className="w-full px-4 py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-base text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
+              className="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-12 bg-white/[0.05] border border-white/10 rounded-lg text-base text-white placeholder-white/50 resize-none focus:outline-none focus:border-white/20 transition-all disabled:opacity-50"
               rows="1"
               style={{ 
                 minHeight: '52px',
                 maxHeight: '200px',
                 overflow: 'hidden'
               }}
+              autoCapitalize="sentences"
+              autoCorrect="on"
+              spellCheck="true"
             />
             <button
               onClick={() => handleSendMessage()}
@@ -763,7 +766,8 @@ export default function ChatPage() {
             </button>
           </div>
           <div className="flex items-center justify-between mt-2 text-xs text-white/40">
-            <span>Shift + Enter for new line</span>
+            <span className="hidden sm:inline">Shift + Enter for new line</span>
+            <span className="sm:hidden">↵ to send</span>
             <span>Cicero can make mistakes. Check important info.</span>
           </div>
         </div>
