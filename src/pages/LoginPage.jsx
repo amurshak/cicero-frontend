@@ -105,15 +105,25 @@ export default function LoginPage() {
               error={localError && localError.includes('email') ? localError : ''}
             />
 
-            <Input
-              type="password"
-              label="Password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              error={localError && localError.includes('password') ? localError : ''}
-            />
+            <div>
+              <Input
+                type="password"
+                label="Password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                error={localError && localError.includes('password') ? localError : ''}
+              />
+              <div className="flex justify-end mt-2">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
             {(localError || error) && !localError.includes('email') && !localError.includes('password') && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
