@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Send, Scale, Menu } from 'lucide-react';
+import { Send, Scale, Menu, Zap, Shield, Clock, TrendingUp, Users, Award } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
@@ -8,7 +8,18 @@ export default function HomePage() {
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
   const [showMenu, setShowMenu] = useState(false);
+  const [queriesUsed, setQueriesUsed] = useState(0);
   const menuRef = useRef(null);
+
+  // Track anonymous queries used
+  useEffect(() => {
+    if (!user) {
+      const storedQueries = localStorage.getItem('anonymousQueriesUsed');
+      if (storedQueries) {
+        setQueriesUsed(parseInt(storedQueries, 10));
+      }
+    }
+  }, [user]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -130,9 +141,13 @@ export default function HomePage() {
               </button>
               <button
                 onClick={() => navigate('/signup')}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all"
+                className="relative px-3 sm:px-4 py-1.5 sm:py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-all shadow-lg shadow-blue-600/20 animate-pulse-subtle"
               >
-                Sign Up
+                Start Free
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                </span>
               </button>
             </div>
           )}
@@ -141,16 +156,39 @@ export default function HomePage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-6 sm:pb-8">
+        {/* Value Proposition Badge */}
+        <div className="mb-4 sm:mb-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/10 border border-blue-500/20 rounded-full">
+            <Zap className="w-4 h-4 text-blue-400" />
+            <span className="text-xs sm:text-sm text-blue-400 font-medium">Powered by Congressional API + AI</span>
+          </div>
+        </div>
+
         {/* Main Prompt */}
-        <div className="text-center mb-8 sm:mb-12 max-w-3xl">
+        <div className="text-center mb-4 sm:mb-6 max-w-3xl">
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-3 sm:mb-4">
-            <span className="text-white">What legislative </span>
-            <span className="text-blue-400">information</span>
-            <span className="text-white"> do you need?</span>
+            <span className="text-white">Your AI Assistant for </span>
+            <span className="text-blue-400">Congress</span>
           </h2>
-          <p className="text-white/60 text-base sm:text-lg px-2 sm:px-0">
-            Ask me about bills, members of Congress, voting records, or any legislative process
+          <p className="text-white/80 text-lg sm:text-xl px-2 sm:px-0 mb-4">
+            Instant access to bills, voting records, committee reports, and member information
           </p>
+          
+          {/* Trust Indicators */}
+          <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-white/60 text-sm">
+            <div className="flex items-center gap-1">
+              <Shield className="w-4 h-4" />
+              <span>Official data</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="w-4 h-4" />
+              <span>Real-time updates</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <TrendingUp className="w-4 h-4" />
+              <span>113+ data points</span>
+            </div>
+          </div>
         </div>
 
         {/* Suggested Prompts */}
@@ -167,7 +205,7 @@ export default function HomePage() {
         </div>
 
         {/* Chat Input - Centered in content */}
-        <div className="w-full max-w-2xl px-2 sm:px-0">
+        <div className="w-full max-w-2xl px-2 sm:px-0 mb-8">
           <div className="relative">
             <textarea
               value={message}
@@ -192,6 +230,80 @@ export default function HomePage() {
               <Send size={20} className="text-white" />
             </button>
           </div>
+        </div>
+
+        {/* Benefits Section */}
+        <div className="w-full max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            {/* Benefit 1 */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-500/10 rounded-lg mb-3">
+                <Zap className="w-6 h-6 text-blue-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Lightning Fast</h3>
+              <p className="text-white/60 text-sm">Get answers in seconds, not hours of research</p>
+            </div>
+
+            {/* Benefit 2 */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-green-500/10 rounded-lg mb-3">
+                <Award className="w-6 h-6 text-green-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">100% Accurate</h3>
+              <p className="text-white/60 text-sm">Direct from Congress.gov official database</p>
+            </div>
+
+            {/* Benefit 3 */}
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-500/10 rounded-lg mb-3">
+                <Users className="w-6 h-6 text-purple-400" />
+              </div>
+              <h3 className="text-white font-semibold mb-1">Trusted by Thousands</h3>
+              <p className="text-white/60 text-sm">Join researchers, journalists, and citizens</p>
+            </div>
+          </div>
+
+          {/* CTA for non-authenticated users */}
+          {!user && (
+            <div className="mt-8 text-center">
+              {/* Urgency indicator for anonymous users */}
+              {queriesUsed > 0 && (
+                <div className="mb-4">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-full">
+                    <Clock className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm text-orange-400">
+                      {5 - queriesUsed} free {5 - queriesUsed === 1 ? 'query' : 'queries'} remaining today
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-white/60 text-sm mb-3">
+                <span className="text-blue-400 font-semibold">Free users get 10 queries daily</span> • No credit card required
+              </p>
+              <button
+                onClick={() => navigate('/signup')}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-blue-600/20"
+              >
+                Start Free →
+              </button>
+            </div>
+          )}
+
+          {/* User type indicator */}
+          {user && (
+            <div className="mt-8 text-center">
+              <p className="text-white/60 text-sm">
+                {user.subscription_tier === 'pro' ? (
+                  <span className="text-green-400">✓ Pro Member - 500 queries/day</span>
+                ) : user.subscription_tier === 'enterprise' ? (
+                  <span className="text-purple-400">★ Enterprise - Unlimited queries</span>
+                ) : (
+                  <span className="text-blue-400">Free Member - 10 queries/day • <button onClick={() => navigate('/billing')} className="underline hover:text-blue-300">Upgrade</button></span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
