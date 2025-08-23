@@ -32,6 +32,7 @@ export default function ChatPage() {
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
   const notifiedConversationIds = useRef(new Set()); // Track which conversation IDs we've already notified about
+  const initialMessageSentRef = useRef(false); // Track if initial message was already sent
   
   // Cicero's various thinking states
   const thinkingTerms = [
@@ -393,8 +394,11 @@ export default function ChatPage() {
     // Handle initial message from home page navigation
     // WebSocket should already be connected from context
     const { initialMessage, conversationId: navConversationId } = location.state || {};
-    if (initialMessage && isConnected) {
+    if (initialMessage && isConnected && !initialMessageSentRef.current) {
       console.log('Processing initial message from navigation:', initialMessage);
+      // Mark as sent immediately to prevent duplicates
+      initialMessageSentRef.current = true;
+      
       // Small delay to ensure handlers are set up
       setTimeout(() => {
         const messageText = initialMessage;
@@ -432,7 +436,7 @@ export default function ChatPage() {
         // Clear the state to prevent re-sending
         navigate(location.pathname, { replace: true });
       }, 100); // Minimal delay since WebSocket is pre-connected
-    } else if (initialMessage) {
+    } else if (initialMessage && !initialMessageSentRef.current) {
       // WebSocket not ready yet, but still show the user's message
       console.log('WebSocket not ready, showing message but not sending yet:', initialMessage);
       setMessages(prev => [...prev, {
@@ -447,8 +451,9 @@ export default function ChatPage() {
       
       const retryInitialMessage = () => {
         retryAttempts++;
-        if (websocketService.ws?.readyState === WebSocket.OPEN) {
+        if (websocketService.ws?.readyState === WebSocket.OPEN && !initialMessageSentRef.current) {
           console.log('Retrying initial message send:', initialMessage);
+          initialMessageSentRef.current = true; // Mark as sent
           chatState.sendMessage();
           const currentConversationId = navConversationId || null;
           websocketService.sendQuery(initialMessage, currentConversationId);
