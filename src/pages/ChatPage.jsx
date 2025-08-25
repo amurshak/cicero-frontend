@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePostHog } from 'posthog-js/react';
 import { PageContainer } from '../components/layout/PageContainer';
-import { ArrowLeft, Send, Loader2, ChevronDown, Scale } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, ChevronDown, Scale, HelpCircle } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
 import { useAuth } from '../hooks/useAuth';
@@ -299,6 +299,41 @@ export default function ChatPage() {
       }
     };
 
+    const supportResponseHandler = (data) => {
+      console.log('🎫 Support response received:', data);
+      
+      // Always return to idle state after support response
+      chatState.responseComplete();
+      
+      // Handle support response display
+      const isError = data.metadata?.error || false;
+      const isSuccess = data.metadata?.success || false;
+      const isPartialSuccess = data.metadata?.partial_success || false;
+      
+      setMessages(prev => [...prev, {
+        type: 'assistant',
+        content: data.content,
+        timestamp: new Date(),
+        isSupportResponse: true,
+        supportStatus: {
+          isError,
+          isSuccess,
+          isPartialSuccess,
+          ticketId: data.metadata?.ticket_id,
+          email: data.metadata?.email
+        }
+      }]);
+      
+      // Track support ticket creation
+      if (isSuccess || isPartialSuccess) {
+        trackEvent(posthog, 'SUPPORT_TICKET_CREATED', {
+          ticket_id: data.metadata?.ticket_id,
+          user_type: user ? (user.subscription_tier || 'free') : 'anonymous',
+          email: data.metadata?.email
+        });
+      }
+    };
+
     const errorHandler = (data) => {
       console.log('❌ Error handler called for homepage query:', {
         content: data.content,
@@ -389,6 +424,7 @@ export default function ChatPage() {
     websocketService.on('tool_result', toolResultHandler);
     websocketService.on('response_chunk', responseChunkHandler);
     websocketService.on('response_complete', responseCompleteHandler);
+    websocketService.on('support_response', supportResponseHandler);
     websocketService.on('error', errorHandler);
 
     // Handle initial message from home page navigation
@@ -491,6 +527,7 @@ export default function ChatPage() {
       websocketService.off('tool_result', toolResultHandler);
       websocketService.off('response_chunk', responseChunkHandler);
       websocketService.off('response_complete', responseCompleteHandler);
+      websocketService.off('support_response', supportResponseHandler);
       websocketService.off('error', errorHandler);
       
       // Don't disconnect WebSocket - it's managed by the context
@@ -738,8 +775,34 @@ export default function ChatPage() {
 
       {/* Input - No border, integrated background */}
       <div className="flex-shrink-0 p-3 sm:p-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="relative">
+        <div className="max-w-3xl mx-auto flex items-start gap-3">
+          {/* Help icon with tooltip - positioned to the left */}
+          {user && (
+            <div className="group relative flex flex-col items-center">
+              <button 
+                type="button"
+                className="flex flex-col items-center p-2 hover:bg-white/10 rounded-lg transition-colors"
+                onClick={(e) => e.preventDefault()}
+              >
+                <HelpCircle 
+                  size={24} 
+                  className="text-white/40 hover:text-white/60 transition-colors" 
+                />
+                <span className="text-xs text-white/40 mt-1">Help</span>
+              </button>
+              <div className="absolute bottom-full left-0 mb-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 shadow-lg border border-white/10 z-50" style={{ maxWidth: '28rem', minWidth: '16rem' }}>
+                <div className="font-medium mb-1">Support Command</div>
+                <div className="text-white/80">Type /support followed by your message. Request features, report bugs, ask for help.</div>
+                <div className="text-white/60 text-xs mt-1">Example: /support I need help with billing</div>
+                <div className="absolute top-full left-8 -mt-1">
+                  <div className="w-2 h-2 bg-gray-900 rotate-45 border-b border-r border-white/10"></div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Input area - now in a flex container */}
+          <div className="relative flex-1">
             <textarea
               ref={inputRef}
               value={inputMessage}
@@ -770,11 +833,11 @@ export default function ChatPage() {
               )}
             </button>
           </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-white/40">
-            <span className="hidden sm:inline">Shift + Enter for new line</span>
-            <span className="sm:hidden">↵ to send</span>
-            <span>Cicero can make mistakes. Check important info.</span>
-          </div>
+        </div>
+        <div className="max-w-3xl mx-auto flex items-center justify-between mt-2 text-xs text-white/40">
+          <span className="hidden sm:inline">Shift + Enter for new line</span>
+          <span className="sm:hidden">↵ to send</span>
+          <span>Cicero can make mistakes. Check important info.</span>
         </div>
       </div>
       </div>
