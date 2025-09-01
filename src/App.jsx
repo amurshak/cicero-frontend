@@ -13,6 +13,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import ChatPage from './pages/ChatPage';
 import BillingPage from './pages/BillingPage';
 import BillingSuccessPage from './pages/BillingSuccessPage';
+import UsagePage from './pages/UsagePage';
 import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
 import SearchPage from './pages/SearchPage';
@@ -63,6 +64,11 @@ function App() {
           <Route path="/billing/success" element={
             <ProtectedRoute>
               <BillingSuccessPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/usage" element={
+            <ProtectedRoute>
+              <UsagePage />
             </ProtectedRoute>
           } />
           <Route path="/account" element={

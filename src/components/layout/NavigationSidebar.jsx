@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, 
@@ -6,7 +6,11 @@ import {
   Plus,
   Trash2,
   MoreHorizontal,
-  Scale
+  Scale,
+  CreditCard,
+  BarChart3,
+  Settings,
+  LogOut
 } from 'lucide-react';
 import { sharedStyles } from '../shared/sharedStyles';
 import { useAuth } from '../../hooks/useAuth';
@@ -16,9 +20,11 @@ export function NavigationSidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
+  const dropdownRef = useRef(null);
 
   const isActive = (path) => location.pathname === path;
 
@@ -93,12 +99,36 @@ export function NavigationSidebar() {
     }
   };
 
+  // Handle clicking outside the dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setUserDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleHomeClick = () => {
     navigate('/');
   };
 
   const handleUserClick = () => {
-    navigate('/billing');
+    setUserDropdownOpen(!userDropdownOpen);
+  };
+
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    logout();
+  };
+
+  const handleNavigateToPage = (path) => {
+    setUserDropdownOpen(false);
+    navigate(path);
   };
 
   return (
@@ -235,28 +265,71 @@ export function NavigationSidebar() {
 
       {user && (
         <div className="p-4 border-t border-white/10">
-          <button 
-            onClick={handleUserClick}
-            className="flex items-center gap-3 w-full hover:bg-white/5 rounded-lg p-2 -m-2 transition-all group mb-3"
-          >
-            <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-red-500 transition-colors">
-              <span className="text-sm font-semibold">
-                {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
-              </span>
-            </div>
-            {isExpanded && (
-              <div className="flex-1 animate-fade-in">
-                <p className="text-sm font-medium truncate">{user.display_name || user.email}</p>
-                <p className="text-xs text-white/60">
-                  {user.subscription_tier ? 
-                    user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1) + ' Plan' 
-                    : 'Free Plan'
-                  }
-                </p>
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={handleUserClick}
+              className="flex items-center gap-3 w-full hover:bg-white/5 rounded-lg p-2 -m-2 transition-all group mb-3"
+            >
+              <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-red-500 transition-colors">
+                <span className="text-sm font-semibold">
+                  {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                </span>
+              </div>
+              {isExpanded && (
+                <div className="flex-1 animate-fade-in">
+                  <p className="text-sm font-medium truncate">{user.display_name || user.email}</p>
+                  <p className="text-xs text-white/60">
+                    {user.subscription_tier ? 
+                      user.subscription_tier.charAt(0).toUpperCase() + user.subscription_tier.slice(1) + ' Plan' 
+                      : 'Free Plan'
+                    }
+                  </p>
+                </div>
+              )}
+              <MoreHorizontal size={16} className={`text-white/40 flex-shrink-0 transition-transform ${userDropdownOpen ? 'rotate-90' : ''}`} />
+            </button>
+
+            {/* User Dropdown Menu */}
+            {userDropdownOpen && (
+              <div className="absolute bottom-full left-2 right-2 mb-2 bg-gray-800/95 backdrop-blur-sm border border-white/10 rounded-lg shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 duration-200">
+                <div className="py-2">
+                  <button
+                    onClick={() => handleNavigateToPage('/billing')}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                  >
+                    <CreditCard size={16} className="text-white/60" />
+                    Billing & Subscription
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigateToPage('/usage')}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                  >
+                    <BarChart3 size={16} className="text-white/60" />
+                    Usage & Analytics
+                  </button>
+                  
+                  <button
+                    onClick={() => handleNavigateToPage('/settings')}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-white/90 hover:bg-white/10 transition-colors"
+                  >
+                    <Settings size={16} className="text-white/60" />
+                    Account Settings
+                  </button>
+                  
+                  <div className="border-t border-white/10 my-1"></div>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                  >
+                    <LogOut size={16} className="text-red-400" />
+                    Sign Out
+                  </button>
+                </div>
               </div>
             )}
-            <MoreHorizontal size={16} className="text-white/40 flex-shrink-0" />
-          </button>
+          </div>
 
           {isExpanded && (
             <p className="text-xs text-white/30 px-2 mt-2">

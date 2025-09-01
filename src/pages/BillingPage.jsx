@@ -46,6 +46,30 @@ export default function BillingPage() {
     }, 500);
   };
 
+  const handleContactSales = () => {
+    const email = 'sales@cicero.lawgiver.ai';
+    const subject = 'Enterprise Plan Inquiry - Cicero Legislative Intelligence';
+    const body = `Hi,
+
+I'm interested in learning more about Cicero's Enterprise plan for unlimited queries, API access, and custom solutions.
+
+Please contact me to discuss enterprise pricing and features.
+
+Current subscription: ${subscription?.tier || 'Free'}
+
+Thank you!`;
+    
+    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // Create a temporary anchor element and click it (more reliable than window.location.href)
+    const link = document.createElement('a');
+    link.href = mailtoLink;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleManageSubscription = async () => {
     try {
       setError(null);
@@ -189,7 +213,18 @@ export default function BillingPage() {
           <p className="text-white/80 mb-4">
             For unlimited queries, API access, and custom solutions
           </p>
-          <Button variant="outline">Contact Sales for Enterprise</Button>
+          <Button variant="outline" onClick={handleContactSales} className="mb-3">
+            Contact Sales for Enterprise
+          </Button>
+          <p className="text-xs text-white/50">
+            Send to: {' '}
+            <a 
+              href="mailto:sales@cicero.lawgiver.ai" 
+              className="text-blue-400 hover:text-blue-300 underline transition-colors"
+            >
+              sales@cicero.lawgiver.ai
+            </a>
+          </p>
         </GlassCard>
 
         {/* Debug Info (development only) */}
