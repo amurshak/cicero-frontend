@@ -1,28 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { Send, Scale, Menu } from 'lucide-react';
+import { Send, Scale, Menu, ChevronDown, CreditCard, BarChart3, Settings, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef(null);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const mobileMenuRef = useRef(null);
+  const userDropdownRef = useRef(null);
 
-  // Close menu when clicking outside
+  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target)) {
+        setShowMobileMenu(false);
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
       }
     }
     
-    if (showMenu) {
+    if (showMobileMenu || showUserDropdown) {
       document.addEventListener('mousedown', handleClickOutside);
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [showMenu]);
+  }, [showMobileMenu, showUserDropdown]);
 
   const suggestedPrompts = [
     "What's in H.R. 1?",
@@ -36,11 +41,9 @@ export default function HomePage() {
   const handleSendMessage = (text = message) => {
     if (!text.trim()) return;
     
-    // TODO: Implement actual message sending via WebSocket
-    console.log('Sending message:', text);
     setMessage('');
     
-    // For now, navigate to chat page
+    // Navigate to chat page with initial message
     navigate('/chat', { state: { initialMessage: text } });
   };
 
@@ -77,46 +80,137 @@ export default function HomePage() {
         <div className="flex items-center gap-4">
           {user ? (
             <>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-semibold text-white">
-                    {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
+              {/* Desktop User Dropdown */}
+              <div className="hidden sm:block relative" ref={userDropdownRef}>
+                <button
+                  onClick={() => setShowUserDropdown(!showUserDropdown)}
+                  className="flex items-center gap-2 p-2 hover:bg-white/10 rounded-lg transition-all"
+                >
+                  <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-white">
+                      {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="text-sm text-white/80">
+                    {user.display_name || user.email.split('@')[0]}
                   </span>
-                </div>
-                <span className="text-sm text-white/80 hidden sm:block">
-                  {user.display_name}
-                </span>
-              </div>
-              
-              {/* Desktop Menu - Authenticated */}
-              <div className="hidden sm:flex items-center gap-2">
-                <button
-                  onClick={logout}
-                  className="px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all border border-white/10"
-                >
-                  Logout
-                </button>
-              </div>
-
-              {/* Mobile Menu - Authenticated */}
-              <div className="sm:hidden" ref={menuRef}>
-                <button
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
-                >
-                  <Menu size={20} />
+                  <ChevronDown 
+                    size={16} 
+                    className={`text-white/60 transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} 
+                  />
                 </button>
                 
-                {showMenu && (
-                  <div className="absolute top-16 right-6 bg-primary-800 border border-white/20 rounded-lg p-2 backdrop-blur-md z-50">
+                {showUserDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 bg-primary-800 border border-white/20 rounded-lg p-1 backdrop-blur-md z-50">
                     <button
-                      onClick={() => { logout(); setShowMenu(false); }}
-                      className="block w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                      onClick={() => {
+                        navigate('/billing');
+                        setShowUserDropdown(false);
+                      }}
+                      className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
                     >
-                      Logout
+                      <CreditCard size={16} />
+                      <span>Billing</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/usage');
+                        setShowUserDropdown(false);
+                      }}
+                      className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                    >
+                      <BarChart3 size={16} />
+                      <span>Usage & Analytics</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigate('/settings');
+                        setShowUserDropdown(false);
+                      }}
+                      className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                    >
+                      <Settings size={16} />
+                      <span>Settings</span>
+                    </button>
+                    <div className="border-t border-white/10 my-1"></div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowUserDropdown(false);
+                      }}
+                      className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                    >
+                      <LogOut size={16} />
+                      <span>Logout</span>
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* Mobile Menu - Authenticated */}
+              <div className="sm:hidden flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center">
+                    <span className="text-sm font-semibold text-white">
+                      {user.display_name ? user.display_name[0].toUpperCase() : user.email[0].toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+                
+                <div ref={mobileMenuRef}>
+                  <button
+                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                  >
+                    <Menu size={20} />
+                  </button>
+                  
+                  {showMobileMenu && (
+                    <div className="absolute top-16 right-6 bg-primary-800 border border-white/20 rounded-lg p-1 backdrop-blur-md z-50 w-56">
+                      <button
+                        onClick={() => {
+                          navigate('/billing');
+                          setShowMobileMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                      >
+                        <CreditCard size={16} />
+                        <span>Billing</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate('/usage');
+                          setShowMobileMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                      >
+                        <BarChart3 size={16} />
+                        <span>Usage & Analytics</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigate('/settings');
+                          setShowMobileMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                      >
+                        <Settings size={16} />
+                        <span>Settings</span>
+                      </button>
+                      <div className="border-t border-white/10 my-1"></div>
+                      <button
+                        onClick={() => {
+                          logout();
+                          setShowMobileMenu(false);
+                        }}
+                        className="flex items-center gap-3 w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded transition-all"
+                      >
+                        <LogOut size={16} />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (
