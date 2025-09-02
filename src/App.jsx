@@ -16,7 +16,6 @@ import BillingSuccessPage from './pages/BillingSuccessPage';
 import UsagePage from './pages/UsagePage';
 import AccountPage from './pages/AccountPage';
 import SettingsPage from './pages/SettingsPage';
-import SearchPage from './pages/SearchPage';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -51,11 +50,6 @@ function App() {
           <Route path="/chat" element={<ChatPage />} />
           
           {/* Protected Routes - Features that require authentication */}
-          <Route path="/search" element={
-            <ProtectedRoute>
-              <SearchPage />
-            </ProtectedRoute>
-          } />
           <Route path="/billing" element={
             <ProtectedRoute>
               <BillingPage />
