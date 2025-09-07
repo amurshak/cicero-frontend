@@ -6,7 +6,43 @@ class WebSocketService {
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 1000;
     this.isConnecting = false;
-    this.sessionId = null; // Store session ID for persistence
+    this.sessionId = this.loadSessionId(); // Load session ID from storage on init
+  }
+
+  // Load session ID from browser storage (persists across tab refreshes and reconnections)
+  loadSessionId() {
+    try {
+      const storedSessionId = sessionStorage.getItem('cicero_session_id');
+      if (storedSessionId) {
+        console.log('🔗 Loaded existing session ID from storage:', storedSessionId);
+        return storedSessionId;
+      }
+    } catch (error) {
+      console.warn('Failed to load session ID from storage:', error);
+    }
+    return null;
+  }
+
+  // Save session ID to browser storage
+  saveSessionId(sessionId) {
+    try {
+      if (sessionId) {
+        sessionStorage.setItem('cicero_session_id', sessionId);
+        console.log('💾 Saved session ID to storage:', sessionId);
+      }
+    } catch (error) {
+      console.warn('Failed to save session ID to storage:', error);
+    }
+  }
+
+  // Clear session ID from storage (for explicit session end)
+  clearSessionId() {
+    try {
+      sessionStorage.removeItem('cicero_session_id');
+      console.log('🗑️ Cleared session ID from storage');
+    } catch (error) {
+      console.warn('Failed to clear session ID from storage:', error);
+    }
   }
 
   connect(token) {
@@ -94,6 +130,8 @@ class WebSocketService {
         console.log('🔗 Captured new session ID:', data.metadata.session_id);
       }
       this.sessionId = data.metadata.session_id;
+      // Persist to storage for reconnection resilience
+      this.saveSessionId(this.sessionId);
     }
     
     const { type } = data;
@@ -182,7 +220,23 @@ class WebSocketService {
       this.ws = null;
     }
     this.messageHandlers.clear();
-    this.sessionId = null; // Clear session ID on disconnect
+    // Keep sessionId in memory and storage for reconnection
+    // Only clear when user explicitly ends their session
+  }
+
+  // Method to explicitly end user session (clear everything)
+  endSession() {
+    this.disconnect();
+    this.sessionId = null;
+    this.clearSessionId();
+    console.log('🔚 User session ended, cleared all session data');
+  }
+
+  // Method to start a new session (for debugging/testing)
+  startNewSession() {
+    this.sessionId = null;
+    this.clearSessionId();
+    console.log('🆕 Started new session, previous context cleared');
   }
 }
 

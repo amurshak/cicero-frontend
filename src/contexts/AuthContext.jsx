@@ -130,6 +130,10 @@ export function AuthProvider({ children }) {
     } finally {
       localStorage.removeItem('authToken');
       setUser(null);
+      
+      // Clear WebSocket session on logout to start fresh
+      const { websocketService } = await import('../services/websocket');
+      websocketService.endSession();
     }
   };
 
