@@ -169,7 +169,7 @@ class WebSocketService {
     }
   }
 
-  sendQuery(query, conversationId = null, sessionId = null) {
+  sendQuery(query, conversationId = null, deepThinking = false, sessionId = null) {
     // Use captured session ID if no explicit session ID provided
     const effectiveSessionId = sessionId || this.sessionId;
     
@@ -180,7 +180,7 @@ class WebSocketService {
       const token = localStorage.getItem('authToken');
       this.connect(token).then(() => {
         console.log('🔄 Reconnected, retrying query send');
-        this.sendQuery(query, conversationId, sessionId);
+        this.sendQuery(query, conversationId, deepThinking, sessionId);
       }).catch(error => {
         console.error('Failed to reconnect:', error);
       });
@@ -192,6 +192,7 @@ class WebSocketService {
       content: query,
       conversation_id: conversationId,
       session_id: effectiveSessionId,
+      deep_thinking: deepThinking,
       timestamp: new Date().toISOString()
     };
     console.log('Sending query:', message);

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePostHog } from 'posthog-js/react';
 import { PageContainer } from '../components/layout/PageContainer';
+import { DeepThinkingToggle } from '../components/DeepThinkingToggle';
 import { ArrowLeft, Send, Loader2, ChevronDown, Scale, HelpCircle } from 'lucide-react';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { conversationService } from '../services/conversation';
@@ -28,6 +29,7 @@ export default function ChatPage() {
   const [conversationId, setConversationId] = useState(null);
   const [conversationTitle, setConversationTitle] = useState(null);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [deepThinkingEnabled, setDeepThinkingEnabled] = useState(false);
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const inputRef = useRef(null);
@@ -456,8 +458,8 @@ export default function ChatPage() {
           
           // Send via WebSocket  
           const currentConversationId = navConversationId || null;
-          console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId);
-          websocketService.sendQuery(messageText, currentConversationId);
+          console.log('Sending initial message via WebSocket:', messageText, 'ConversationId:', currentConversationId, 'Deep thinking:', deepThinkingEnabled);
+          websocketService.sendQuery(messageText, currentConversationId, deepThinkingEnabled);
           
           // Safety timeout in case WebSocket response never comes
           // Only reset if we're still in sending state (no acknowledgment received)
@@ -492,7 +494,7 @@ export default function ChatPage() {
           initialMessageSentRef.current = true; // Mark as sent
           chatState.sendMessage();
           const currentConversationId = navConversationId || null;
-          websocketService.sendQuery(initialMessage, currentConversationId);
+          websocketService.sendQuery(initialMessage, currentConversationId, deepThinkingEnabled);
           navigate(location.pathname, { replace: true });
           
           // Safety timeout in case error handler doesn't fire
@@ -573,8 +575,8 @@ export default function ChatPage() {
     }, 100); // Small delay to ensure message is rendered
 
     // Send via WebSocket
-    console.log('Sending message via WebSocket:', messageText, 'Conversation ID:', conversationId);
-    websocketService.sendQuery(messageText, conversationId);
+    console.log('Sending message via WebSocket:', messageText, 'Conversation ID:', conversationId, 'Deep thinking:', deepThinkingEnabled);
+    websocketService.sendQuery(messageText, conversationId, deepThinkingEnabled);
   };
 
   const handleKeyDown = (e) => {
@@ -833,6 +835,13 @@ export default function ChatPage() {
               )}
             </button>
           </div>
+          
+          {/* Deep Thinking Toggle */}
+          <DeepThinkingToggle 
+            enabled={deepThinkingEnabled}
+            onToggle={() => setDeepThinkingEnabled(!deepThinkingEnabled)}
+            disabled={chatState.isProcessing}
+          />
         </div>
         <div className="max-w-3xl mx-auto flex items-center justify-between mt-2 text-xs text-white/40">
           <span className="hidden sm:inline">Shift + Enter for new line</span>
