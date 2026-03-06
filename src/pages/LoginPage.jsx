@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { usePostHog } from 'posthog-js/react';
 import { GlassCard } from '../components/shared/GlassCard';
@@ -150,7 +150,7 @@ export default function LoginPage() {
             <div id="googleSignInButton" className="w-full"></div>
 
             <p className="text-center text-sm text-white/60">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <Link to="/signup" className="text-blue-400 hover:text-blue-300 transition-colors">
                 Sign up
               </Link>

@@ -155,7 +155,7 @@ export default function ChatPage() {
 
   // Handle conversation navigation state changes
   useEffect(() => {
-    const { conversationId: navConversationId, newConversation, initialMessage } = location.state || {};
+    const { conversationId: navConversationId, newConversation } = location.state || {};
     
     if (navConversationId) {
       // Resuming existing conversation
@@ -218,12 +218,12 @@ export default function ChatPage() {
       handleNewConversationId(data.metadata?.conversation_id, 'reasoning_update');
     };
 
-    const toolStartHandler = (data) => {
+    const toolStartHandler = () => {
       chatState.startSearching();
       // Don't show tool details to user, just the status
     };
 
-    const toolResultHandler = (data) => {
+    const toolResultHandler = () => {
       chatState.startSearching();
       // Don't show tool results to user, just the status
     };

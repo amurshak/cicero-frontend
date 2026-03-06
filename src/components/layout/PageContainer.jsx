@@ -1,4 +1,3 @@
-import React from 'react';
 import { NavigationSidebar } from './NavigationSidebar';
 
 export function PageContainer({ children, showSidebar = true }) {

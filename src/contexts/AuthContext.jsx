@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect } from 'react';
 import { usePostHog } from 'posthog-js/react';
 import { authService } from '../services/auth';
 import { identifyUser, resetUser } from '../services/posthog';

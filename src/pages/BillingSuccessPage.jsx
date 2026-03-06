@@ -9,9 +9,8 @@ import { useAuth } from '../hooks/useAuth';
 export default function BillingSuccessPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [verificationComplete, setVerificationComplete] = useState(false);
 
   // Get session_id from URL params if available
   const sessionId = searchParams.get('session_id');
@@ -25,7 +24,6 @@ export default function BillingSuccessPage() {
           if (refreshUser) {
             await refreshUser();
           }
-          setVerificationComplete(true);
           setLoading(false);
         }, 2000);
       } catch (error) {
@@ -161,10 +159,10 @@ export default function BillingSuccessPage() {
           <div className="space-y-2">
             <h3 className="text-lg font-semibold text-white">💡 Pro Tips</h3>
             <ul className="space-y-1 text-white/80 text-sm">
-              <li>• Ask about specific bills: "What's the status of HR 1234?"</li>
-              <li>• Research members: "Tell me about Senator Smith's voting record"</li>
-              <li>• Explore committees: "What bills are in the Judiciary Committee?"</li>
-              <li>• Track legislation: "Show me recent healthcare bills"</li>
+              <li>• Ask about specific bills: &quot;What&apos;s the status of HR 1234?&quot;</li>
+              <li>• Research members: &quot;Tell me about Senator Smith&apos;s voting record&quot;</li>
+              <li>• Explore committees: &quot;What bills are in the Judiciary Committee?&quot;</li>
+              <li>• Track legislation: &quot;Show me recent healthcare bills&quot;</li>
             </ul>
           </div>
         </GlassCard>

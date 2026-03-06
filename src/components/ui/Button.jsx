@@ -1,4 +1,3 @@
-import React from 'react';
 import { sharedStyles } from '../shared/sharedStyles';
 
 export function Button({ 

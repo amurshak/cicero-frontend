@@ -228,7 +228,7 @@ Thank you!`;
         </GlassCard>
 
         {/* Debug Info (development only) */}
-        {process.env.NODE_ENV === 'development' && (
+        {import.meta.env.DEV && (
           <GlassCard className="bg-yellow-500/10 border-yellow-500/30">
             <div className="text-sm space-y-2">
               <h3 className="font-semibold text-yellow-400">Development Info</h3>

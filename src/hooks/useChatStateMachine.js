@@ -126,7 +126,7 @@ function chatReducer(state, action) {
   const { connection, conversation } = state;
 
   // Log state transitions for debugging
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log(`[ChatStateMachine] Connection: ${connection}, Conversation: ${conversation} + ${action.type}`);
   }
 
@@ -152,7 +152,7 @@ function chatReducer(state, action) {
         error: action.type === CHAT_ACTIONS.CONNECTION_ERROR ? action.payload : state.error
       };
       
-      if (process.env.NODE_ENV === 'development') {
+      if (import.meta.env.DEV) {
         console.log(`[ChatStateMachine] Connection: ${connection} → ${nextConnection}`);
       }
       
@@ -192,7 +192,7 @@ function chatReducer(state, action) {
       metadata: action.payload || state.metadata
     };
 
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`[ChatStateMachine] Conversation: ${conversation} → ${nextConversation}`);
     }
 
@@ -279,8 +279,7 @@ export function useChatStateMachine() {
     dispatch,
     
     // Legacy compatibility (for easier migration)
-    state: state.conversation,
-    isConnected: isConnected
+    state: state.conversation
   };
 }
 

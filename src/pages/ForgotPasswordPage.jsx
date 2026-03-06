@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GlassCard } from '../components/shared/GlassCard';
 import { Input } from '../components/ui/Input';
@@ -57,7 +57,7 @@ export default function ForgotPasswordPage() {
               <Mail size={32} className="text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Check Your Email</h1>
-            <p className="text-white/60">We've sent password reset instructions to your email address</p>
+            <p className="text-white/60">We&apos;ve sent password reset instructions to your email address</p>
           </div>
 
           <GlassCard className="p-8">
@@ -70,7 +70,7 @@ export default function ForgotPasswordPage() {
 
               <div className="space-y-4">
                 <p className="text-sm text-white/60">
-                  Didn't receive the email? Check your spam folder or try again with a different email address.
+                  Didn&apos;t receive the email? Check your spam folder or try again with a different email address.
                 </p>
 
                 <Button

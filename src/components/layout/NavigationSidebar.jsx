@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -21,12 +21,9 @@ export function NavigationSidebar() {
   const [conversations, setConversations] = useState([]);
   const [conversationsLoading, setConversationsLoading] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, loading: authLoading } = useAuth();
   const dropdownRef = useRef(null);
-
-  const isActive = (path) => location.pathname === path;
 
   // Debug auth state for anonymous user prompt
   useEffect(() => {
