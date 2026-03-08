@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-console.log('🏥 Cicero Frontend Health Check');
+console.log('🏥 Hololex Frontend Health Check');
 console.log('================================\n');
 
 // Check if we're in the right directory
@@ -19,8 +19,8 @@ if (!fs.existsSync(packageJsonPath)) {
 }
 
 const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-if (packageJson.name !== 'cicero-frontend') {
-  console.error('❌ Error: This doesn\'t appear to be the Cicero frontend directory');
+if (packageJson.name !== 'hololex-frontend') {
+  console.error('❌ Error: This doesn\'t appear to be the Hololex frontend directory');
   process.exit(1);
 }
 

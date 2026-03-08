@@ -72,7 +72,7 @@ export default function HomePage() {
             <Scale size={24} className="text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white">Cicero</h1>
+            <h1 className="text-xl font-bold text-white">Hololex</h1>
             <p className="text-xs text-white/60 hidden min-[400px]:block">Legislative Intelligence</p>
           </div>
         </div>

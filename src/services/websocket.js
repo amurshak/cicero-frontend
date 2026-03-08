@@ -12,7 +12,7 @@ class WebSocketService {
   // Load session ID from browser storage (persists across tab refreshes and reconnections)
   loadSessionId() {
     try {
-      const storedSessionId = sessionStorage.getItem('cicero_session_id');
+      const storedSessionId = sessionStorage.getItem('hololex_session_id');
       if (storedSessionId) {
         console.log('🔗 Loaded existing session ID from storage:', storedSessionId);
         return storedSessionId;
@@ -27,7 +27,7 @@ class WebSocketService {
   saveSessionId(sessionId) {
     try {
       if (sessionId) {
-        sessionStorage.setItem('cicero_session_id', sessionId);
+        sessionStorage.setItem('hololex_session_id', sessionId);
         console.log('💾 Saved session ID to storage:', sessionId);
       }
     } catch (error) {
@@ -38,7 +38,7 @@ class WebSocketService {
   // Clear session ID from storage (for explicit session end)
   clearSessionId() {
     try {
-      sessionStorage.removeItem('cicero_session_id');
+      sessionStorage.removeItem('hololex_session_id');
       console.log('🗑️ Cleared session ID from storage');
     } catch (error) {
       console.warn('Failed to clear session ID from storage:', error);

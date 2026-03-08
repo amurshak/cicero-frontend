@@ -1,6 +1,6 @@
-# Cicero Frontend
+# Hololex Frontend
 
-React-based web interface for the Cicero legislative intelligence platform, featuring a modern glassmorphism design system.
+React-based web interface for the Hololex legislative intelligence platform, featuring a modern glassmorphism design system.
 
 ## 🚀 Features
 
@@ -42,8 +42,8 @@ VITE_API_URL=http://localhost:8000
 VITE_WS_URL=ws://localhost:8000
 
 # Production URLs
-# VITE_API_URL=https://cicero-prod-bad7a3dceedc.herokuapp.com
-# VITE_WS_URL=wss://cicero-prod-bad7a3dceedc.herokuapp.com
+# VITE_API_URL=https://hololex-prod-bad7a3dceedc.herokuapp.com
+# VITE_WS_URL=wss://hololex-prod-bad7a3dceedc.herokuapp.com
 
 # Google OAuth
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
@@ -116,7 +116,7 @@ npm run build
 
 ## 🔌 API Integration
 
-The frontend connects to the Cicero backend API:
+The frontend connects to the Hololex backend API:
 - REST endpoints for authentication and data
 - WebSocket for real-time chat streaming
 - Automatic token management and refresh
@@ -135,8 +135,8 @@ The frontend connects to the Cicero backend API:
 
 ## 🤝 Contributing
 
-This is part of the larger Cicero project. See the main README for contribution guidelines.
+This is part of the larger Hololex project. See the main README for contribution guidelines.
 
 ## 📄 License
 
-Part of the Cicero Legislative Intelligence Platform.
+Part of the Hololex Legislative Intelligence Platform.

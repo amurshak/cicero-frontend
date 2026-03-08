@@ -1,4 +1,4 @@
-# Cicero Frontend Setup Guide
+# Hololex Frontend Setup Guide
 
 ## ✅ Prerequisites Completed
 
@@ -12,12 +12,12 @@
 
 The frontend is configured to connect to:
 - **Development**: `http://localhost:8000` (backend running locally)
-- **Production**: `https://cicero-prod-bad7a3dceedc.herokuapp.com` (live backend)
+- **Production**: `https://hololex-prod-bad7a3dceedc.herokuapp.com` (live backend)
 
 To switch to production testing, uncomment these lines in `.env`:
 ```env
-VITE_API_URL=https://cicero-prod-bad7a3dceedc.herokuapp.com
-VITE_WS_URL=wss://cicero-prod-bad7a3dceedc.herokuapp.com
+VITE_API_URL=https://hololex-prod-bad7a3dceedc.herokuapp.com
+VITE_WS_URL=wss://hololex-prod-bad7a3dceedc.herokuapp.com
 ```
 
 ### 2. Google OAuth Setup (Optional)

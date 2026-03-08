@@ -36,7 +36,7 @@ export default function ChatPage() {
   const notifiedConversationIds = useRef(new Set()); // Track which conversation IDs we've already notified about
   const initialMessageSentRef = useRef(false); // Track if initial message was already sent
   
-  // Cicero's various thinking states
+  // Hololex's various thinking states
   const thinkingTerms = [
     'thinking',
     'pontificating',
@@ -685,7 +685,7 @@ export default function ChatPage() {
                       {chatState.conversation === CONVERSATION_STATES.THINKING && (
                         <>
                           <div className="relative flex items-center gap-2">
-                            <span className="text-white/60">Cicero is</span>
+                            <span className="text-white/60">Hololex is</span>
                             <div className="relative h-6 w-32 overflow-hidden">
                               <div 
                                 className="absolute inset-0 flex items-center transition-transform duration-500 ease-in-out"
@@ -718,7 +718,7 @@ export default function ChatPage() {
                       )}
                       {chatState.conversation === CONVERSATION_STATES.STREAMING && (
                         <>
-                          <span className="text-white/60">Cicero is writing</span>
+                          <span className="text-white/60">Hololex is writing</span>
                           <div className="flex gap-1">
                             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                             <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style={{ animationDelay: '150ms' }}></div>
@@ -846,7 +846,7 @@ export default function ChatPage() {
         <div className="max-w-3xl mx-auto flex items-center justify-between mt-2 text-xs text-white/40">
           <span className="hidden sm:inline">Shift + Enter for new line</span>
           <span className="sm:hidden">↵ to send</span>
-          <span>Cicero can make mistakes. Check important info.</span>
+          <span>Hololex can make mistakes. Check important info.</span>
         </div>
       </div>
       </div>

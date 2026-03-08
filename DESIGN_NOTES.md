@@ -1,4 +1,4 @@
-# Cicero Frontend Design Notes
+# Hololex Frontend Design Notes
 
 ## 🎨 Design Decisions & Implementation
 
@@ -16,7 +16,7 @@ Based on the provided reference (DOGEai screenshot), we've implemented a clean, 
 #### 🌙 Our Dark Theme Adaptation
 
 **Header Design:**
-- Cicero logo with blue accent (Scale icon)
+- Hololex logo with blue accent (Scale icon)
 - Minimal user avatar and menu
 - Responsive mobile hamburger menu
 - Maintains glassmorphism subtle transparency

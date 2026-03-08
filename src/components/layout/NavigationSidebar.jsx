@@ -153,7 +153,7 @@ export function NavigationSidebar() {
           </div>
           {isExpanded && (
             <div className="animate-fade-in">
-              <h1 className="font-bold text-lg">Cicero</h1>
+              <h1 className="font-bold text-lg">Hololex</h1>
               <p className="text-xs text-white/60">Legislative Intelligence</p>
             </div>
           )}

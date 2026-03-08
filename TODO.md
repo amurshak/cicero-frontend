@@ -1,4 +1,4 @@
-# Cicero Frontend TODO
+# Hololex Frontend TODO
 
 ## 🚀 Immediate Priority
 

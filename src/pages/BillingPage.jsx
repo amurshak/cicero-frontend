@@ -47,11 +47,11 @@ export default function BillingPage() {
   };
 
   const handleContactSales = () => {
-    const email = 'sales@cicero.lawgiver.ai';
-    const subject = 'Enterprise Plan Inquiry - Cicero Legislative Intelligence';
+    const email = 'sales@hololex.lawgiver.ai';
+    const subject = 'Enterprise Plan Inquiry - Hololex Legislative Intelligence';
     const body = `Hi,
 
-I'm interested in learning more about Cicero's Enterprise plan for unlimited queries, API access, and custom solutions.
+I'm interested in learning more about Hololex's Enterprise plan for unlimited queries, API access, and custom solutions.
 
 Please contact me to discuss enterprise pricing and features.
 
@@ -105,7 +105,7 @@ Thank you!`;
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-2">Billing & Subscription</h1>
-          <p className="text-white/60">Manage your Cicero subscription and usage</p>
+          <p className="text-white/60">Manage your Hololex subscription and usage</p>
         </div>
 
         {error && (
@@ -219,10 +219,10 @@ Thank you!`;
           <p className="text-xs text-white/50">
             Send to: {' '}
             <a 
-              href="mailto:sales@cicero.lawgiver.ai" 
+              href="mailto:sales@hololex.lawgiver.ai" 
               className="text-blue-400 hover:text-blue-300 underline transition-colors"
             >
-              sales@cicero.lawgiver.ai
+              sales@hololex.lawgiver.ai
             </a>
           </p>
         </GlassCard>
