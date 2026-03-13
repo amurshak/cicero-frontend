@@ -30,6 +30,19 @@ function clusterColor(clusterId: number | null): string {
 
 function transformUniverseResponse(data: UniverseApiResponse): GeneratedUniverse {
   const { provisions: apiProvisions, clusters, connections, positions: apiPositions } = data
+  const n = apiProvisions.length
+
+  // Validate position array lengths before handing to Three.js.
+  // PointCloud.tsx iterates cur.length in its transition loop — a short array would
+  // cause out-of-bounds reads in the BufferAttribute and corrupt the WebGL context.
+  for (const layout of ['hierarchical', 'semantic', 'structural'] as const) {
+    const arr = apiPositions[layout]
+    if (arr.length !== n * 3) {
+      throw new Error(
+        `[Explorer] positions.${layout} length mismatch: expected ${n * 3}, got ${arr.length}`
+      )
+    }
+  }
 
   // Convert flat number[] to Float32Array per layout for Three.js BufferAttribute
   const positions = {
@@ -51,9 +64,9 @@ function transformUniverseResponse(data: UniverseApiResponse): GeneratedUniverse
     section: p.section,
     clusterId: p.clusterId,
     color: clusterColor(p.clusterId),
-    x: semanticPos[i * 3] ?? 0,
-    y: semanticPos[i * 3 + 1] ?? 0,
-    z: semanticPos[i * 3 + 2] ?? 0,
+    x: semanticPos[i * 3],
+    y: semanticPos[i * 3 + 1],
+    z: semanticPos[i * 3 + 2],
   }))
 
   return { provisions, clusters, connections, positions }
@@ -71,17 +84,22 @@ function transformUniverseResponse(data: UniverseApiResponse): GeneratedUniverse
  * since provision indices differ between dummy (2000) and real data (~8460).
  */
 export async function fetchUniverse(options?: FetchUniverseOptions): Promise<GeneratedUniverse> {
+  let apiData: UniverseApiResponse
   try {
     const { data } = await api.get<UniverseApiResponse>('/api/v1/explorer/universe', {
       signal: options?.signal,
     })
-    return transformUniverseResponse(data)
+    apiData = data
   } catch (err: unknown) {
     // Intentional cancellation (AbortController / React unmount cleanup) — do not fall back
     if (isCancel(err)) throw err
     console.warn('[Explorer] API unavailable, falling back to dummy data:', err)
     return generateUniverse(2000)
   }
+
+  // Transform outside the network catch so schema/validation errors propagate to the
+  // caller (ExplorerPage) rather than silently producing dummy data.
+  return transformUniverseResponse(apiData)
 }
 
 export async function fetchProvision(citation: string): Promise<ProvisionDetail> {
