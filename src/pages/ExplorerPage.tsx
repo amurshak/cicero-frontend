@@ -1,16 +1,34 @@
-import { useMemo, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Universe } from '@/components/explorer/Universe'
 import { LayoutToggle } from '@/components/explorer/LayoutToggle'
-import { generateUniverse } from '@/data/generateUniverse'
+import { fetchUniverse } from '@/services/explorerApi'
+import type { GeneratedUniverse } from '@/data/generateUniverse'
 import type { ProvisionPoint } from '@/types/provision'
 import { useExplorerStore } from '@/stores/explorerStore'
 
 export function ExplorerPage() {
-  const { provisions, connections, positions } = useMemo(() => generateUniverse(2000), [])
-
+  const [universe, setUniverse] = useState<GeneratedUniverse | null>(null)
   const setHoveredPoint = useExplorerStore((s) => s.setHoveredPoint)
   const setSelectedPoint = useExplorerStore((s) => s.setSelectedPoint)
   const selectedPoint = useExplorerStore((s) => s.selectedPoint)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    fetchUniverse({ signal: controller.signal })
+      .then((result) => {
+        // Clear stale ProvisionPoint refs — provision indices differ between
+        // dummy data (2000 entries) and real data (~8460 entries)
+        setHoveredPoint(null)
+        setSelectedPoint(null)
+        setUniverse(result)
+      })
+      .catch((err) => {
+        if (err?.name !== 'CanceledError') {
+          console.error('[Explorer] Failed to load universe:', err)
+        }
+      })
+    return () => controller.abort()
+  }, [setHoveredPoint, setSelectedPoint])
 
   const [tooltip, setTooltip] = useState<{ point: ProvisionPoint; x: number; y: number } | null>(
     null,
@@ -38,6 +56,16 @@ export function ExplorerPage() {
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setTooltip((prev) => (prev ? { ...prev, x: e.clientX, y: e.clientY } : null))
   }, [])
+
+  if (!universe) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-[#010208]">
+        <p className="text-white/30 text-sm tracking-widest uppercase">Loading universe…</p>
+      </div>
+    )
+  }
+
+  const { provisions, connections, positions } = universe
 
   return (
     <div className="w-full h-full relative" onMouseMove={handleMouseMove}>
@@ -68,7 +96,7 @@ export function ExplorerPage() {
       {/* Stats */}
       <div className="absolute bottom-4 left-5 z-10">
         <p className="text-[11px] text-white/20 tracking-wider">
-          {provisions.length.toLocaleString()} provisions · Title 42
+          {universe.provisions.length.toLocaleString()} provisions · Title 42
         </p>
       </div>
 
