@@ -37,7 +37,7 @@ function transformUniverseResponse(data: UniverseApiResponse): GeneratedUniverse
   // cause out-of-bounds reads in the BufferAttribute and corrupt the WebGL context.
   for (const layout of ['hierarchical', 'semantic', 'structural'] as const) {
     const arr = apiPositions[layout]
-    if (arr.length !== n * 3) {
+    if (!arr || arr.length !== n * 3) {
       throw new Error(
         `[Explorer] positions.${layout} length mismatch: expected ${n * 3}, got ${arr.length}`
       )
