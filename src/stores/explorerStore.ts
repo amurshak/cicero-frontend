@@ -12,6 +12,11 @@ interface ExplorerState {
   setHoveredPoint: (point: ProvisionPoint | null) => void
   setSelectedPoint: (point: ProvisionPoint | null) => void
 
+  // Isolation — click a node to dim everything except its first-degree neighborhood
+  isolatedIndex: number | null
+  isolatedNeighbors: Set<number> | null
+  setIsolation: (index: number | null, neighbors: Set<number> | null) => void
+
   // UI
   showEdges: boolean
   toggleEdges: () => void
@@ -27,6 +32,10 @@ export const useExplorerStore = create<ExplorerState>((set) => ({
   selectedPoint: null,
   setHoveredPoint: (point) => set({ hoveredPoint: point }),
   setSelectedPoint: (point) => set({ selectedPoint: point }),
+
+  isolatedIndex: null,
+  isolatedNeighbors: null,
+  setIsolation: (index, neighbors) => set({ isolatedIndex: index, isolatedNeighbors: neighbors }),
 
   showEdges: false,
   toggleEdges: () => set((s) => ({ showEdges: !s.showEdges })),

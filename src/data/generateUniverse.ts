@@ -19,18 +19,18 @@ function gaussianRandom(rng: () => number, mean: number, stdDev: number): number
 }
 
 const CLUSTERS = [
-  { label: 'Public Health Service', color: [0.23, 0.51, 0.96] },
-  { label: 'Communicable Diseases', color: [0.02, 0.71, 0.83] },
-  { label: 'Mental Health', color: [0.49, 0.36, 0.96] },
-  { label: 'Substance Abuse', color: [0.63, 0.25, 0.85] },
-  { label: 'Medicare & Medicaid', color: [0.06, 0.73, 0.51] },
-  { label: 'Maternal & Child Health', color: [0.96, 0.62, 0.04] },
-  { label: 'Environmental Health', color: [0.16, 0.65, 0.53] },
-  { label: 'Bioterrorism Preparedness', color: [0.94, 0.27, 0.27] },
-  { label: 'Health Information', color: [0.31, 0.76, 0.97] },
-  { label: 'Indian Health', color: [0.85, 0.55, 0.20] },
-  { label: 'Vaccine Programs', color: [0.55, 0.83, 0.33] },
-  { label: 'Food & Drug Safety', color: [0.96, 0.47, 0.53] },
+  { label: 'Public Health Service', color: [0.25, 0.50, 0.95] },
+  { label: 'Communicable Diseases', color: [0.05, 0.72, 0.85] },
+  { label: 'Mental Health', color: [0.45, 0.35, 0.90] },
+  { label: 'Substance Abuse', color: [0.55, 0.30, 0.80] },
+  { label: 'Medicare & Medicaid', color: [0.05, 0.75, 0.65] },
+  { label: 'Maternal & Child Health', color: [0.35, 0.60, 0.95] },
+  { label: 'Environmental Health', color: [0.08, 0.65, 0.60] },
+  { label: 'Bioterrorism Preparedness', color: [0.50, 0.42, 0.85] },
+  { label: 'Health Information', color: [0.15, 0.78, 0.95] },
+  { label: 'Indian Health', color: [0.20, 0.45, 0.70] },
+  { label: 'Vaccine Programs', color: [0.10, 0.72, 0.78] },
+  { label: 'Food & Drug Safety', color: [0.40, 0.55, 0.92] },
 ]
 
 export interface GeneratedUniverse {
@@ -65,7 +65,7 @@ export function generateUniverse(count = 2000, seed = 42): GeneratedUniverse {
   for (let i = 0; i < clusterCount; i++) {
     const theta = (i / clusterCount) * Math.PI * 2 + rng() * 0.5
     const phi = Math.acos(2 * rng() - 1)
-    const r = 25 + rng() * 35
+    const r = 45 + rng() * 50
     semanticCentroids.push([
       r * Math.sin(phi) * Math.cos(theta),
       r * Math.sin(phi) * Math.sin(theta),
@@ -89,16 +89,16 @@ export function generateUniverse(count = 2000, seed = 42): GeneratedUniverse {
 
   for (let c = 0; c < clusterCount; c++) {
     const indices = provsByCluster[c]
-    // Each cluster forms a ring at a different height
-    const ringY = (c - clusterCount / 2) * 8
-    const ringRadius = 30 + (c % 3) * 12
+    // Each cluster forms a ring at a different height — spread out for legibility
+    const ringY = (c - clusterCount / 2) * 18
+    const ringRadius = 45 + (c % 3) * 18
 
     for (let j = 0; j < indices.length; j++) {
       const idx = indices[j]
       const angle = (j / indices.length) * Math.PI * 2
-      const jitter = rng() * 3 - 1.5
+      const jitter = rng() * 4 - 2
       hierarchicalPos[idx * 3] = Math.cos(angle) * (ringRadius + jitter)
-      hierarchicalPos[idx * 3 + 1] = ringY + (rng() - 0.5) * 3
+      hierarchicalPos[idx * 3 + 1] = ringY + (rng() - 0.5) * 4
       hierarchicalPos[idx * 3 + 2] = Math.sin(angle) * (ringRadius + jitter)
     }
   }
@@ -138,7 +138,7 @@ export function generateUniverse(count = 2000, seed = 42): GeneratedUniverse {
   for (let i = 0; i < count; i++) {
     const degree = connectionCounts[i]
     const importance = degree / maxDegree // 0 = peripheral, 1 = hub
-    const r = 10 + (1 - importance) * 55 // hubs closer to center
+    const r = 15 + (1 - importance) * 85 // hubs closer to center
     const theta = rng() * Math.PI * 2
     const phi = Math.acos(2 * rng() - 1)
     // Cluster angle offset so same-cluster nodes stay somewhat grouped

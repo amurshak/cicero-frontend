@@ -4,20 +4,20 @@ import type { UniverseApiResponse, FetchUniverseOptions } from '@/types/explorer
 import { generateUniverse, type GeneratedUniverse } from '@/data/generateUniverse'
 import type { ProvisionPoint, ProvisionDetail } from '@/types/provision'
 
-// Color palette matching generateUniverse.ts CLUSTERS (for visual consistency with dummy data)
+// Cool palette with enough hue variation to distinguish clusters visually
 const CLUSTER_COLORS: [number, number, number][] = [
-  [0.23, 0.51, 0.96], // blue — Public Health Service
-  [0.02, 0.71, 0.83], // cyan — Communicable Diseases
-  [0.49, 0.36, 0.96], // violet — Mental Health
-  [0.63, 0.25, 0.85], // purple — Substance Abuse
-  [0.06, 0.73, 0.51], // teal — Medicare & Medicaid
-  [0.96, 0.62, 0.04], // amber — Maternal & Child Health
-  [0.16, 0.65, 0.53], // green — Environmental Health
-  [0.94, 0.27, 0.27], // red — Bioterrorism Preparedness
-  [0.31, 0.76, 0.97], // sky — Health Information
-  [0.85, 0.55, 0.20], // orange — Indian Health
-  [0.55, 0.83, 0.33], // lime — Vaccine Programs
-  [0.96, 0.47, 0.53], // pink — Food & Drug Safety
+  [0.25, 0.50, 0.95], // blue — Public Health Service
+  [0.05, 0.72, 0.85], // cyan — Communicable Diseases
+  [0.45, 0.35, 0.90], // indigo — Mental Health
+  [0.55, 0.30, 0.80], // violet — Substance Abuse
+  [0.05, 0.75, 0.65], // teal — Medicare & Medicaid
+  [0.35, 0.60, 0.95], // periwinkle — Maternal & Child Health
+  [0.08, 0.65, 0.60], // dark teal — Environmental Health
+  [0.50, 0.42, 0.85], // lavender — Bioterrorism Preparedness
+  [0.15, 0.78, 0.95], // sky — Health Information
+  [0.20, 0.45, 0.70], // steel — Indian Health
+  [0.10, 0.72, 0.78], // ocean — Vaccine Programs
+  [0.40, 0.55, 0.92], // cornflower — Food & Drug Safety
 ]
 
 function clusterColor(clusterId: number | null): string {
