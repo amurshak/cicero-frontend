@@ -14,23 +14,22 @@ interface UniverseProps {
   positions: Record<LayoutMode, Float32Array>
   onHover?: (index: number | null, point: ProvisionPoint | null) => void
   onClick?: (index: number, point: ProvisionPoint) => void
+  onMiss?: () => void
 }
 
-function Scene({ provisions, connections, positions, onHover, onClick }: UniverseProps) {
+function Scene({ provisions, connections, positions, onHover, onClick, onMiss }: UniverseProps) {
   // Shared animated positions — PointCloud writes, ConnectionLines reads
   const currentPositions = useRef<Float32Array>(new Float32Array(0))
 
   return (
     <>
-      <ambientLight intensity={0.05} />
+      <ambientLight intensity={0.03} />
 
-      {/* Deep space star layers — parallax depth */}
-      <Stars radius={600} depth={300} count={12000} factor={2} saturation={0} fade speed={0.3} />
-      <Stars radius={300} depth={150} count={4000} factor={4} saturation={0.1} fade speed={0.4} />
-      <Stars radius={100} depth={60} count={800} factor={8} saturation={0.2} fade speed={0.5} />
+      {/* Sparse distant stars — subtle, so the network is the visual focus */}
+      <Stars radius={600} depth={300} count={3000} factor={1.5} saturation={0} fade speed={0.2} />
 
-      {/* Exponential fog — soft depth fade, no hard cutoff */}
-      <fogExp2 attach="fog" args={['#010208', 0.004]} />
+      {/* Navy-tinted fog — atmospheric depth fade */}
+      <fogExp2 attach="fog" args={['#060d1a', 0.0035]} />
 
       {/* The web of connections — reads from shared animated positions */}
       <ConnectionLines
@@ -47,26 +46,27 @@ function Scene({ provisions, connections, positions, onHover, onClick }: Univers
         currentPositions={currentPositions}
         onHover={onHover}
         onClick={onClick}
+        onMiss={onMiss}
       />
 
       {/* Mouse-position steering, WASD flight */}
       <FlyCamera speed={30} lookSpeed={1.2} />
 
-      {/* Post-processing: bloom for glow */}
+      {/* Post-processing: bloom for luminous glow on nodes and connection lines */}
       <EffectComposer multisampling={0}>
         <Bloom
           mipmapBlur
-          intensity={1.5}
-          luminanceThreshold={0.1}
+          intensity={1.2}
+          luminanceThreshold={0.15}
           luminanceSmoothing={0.9}
-          radius={0.8}
+          radius={0.7}
         />
       </EffectComposer>
     </>
   )
 }
 
-export function Universe({ provisions, connections, positions, onHover, onClick }: UniverseProps) {
+export function Universe({ provisions, connections, positions, onHover, onClick, onMiss }: UniverseProps) {
   return (
     <Canvas
       camera={{
@@ -80,7 +80,8 @@ export function Universe({ provisions, connections, positions, onHover, onClick 
         toneMappingExposure: 0.8,
         antialias: false,
       }}
-      style={{ background: '#010208' }}
+      style={{ background: '#060d1a' }}
+      onPointerMissed={onMiss}
     >
       <Scene
         provisions={provisions}
@@ -88,6 +89,7 @@ export function Universe({ provisions, connections, positions, onHover, onClick 
         positions={positions}
         onHover={onHover}
         onClick={onClick}
+        onMiss={onMiss}
       />
     </Canvas>
   )
